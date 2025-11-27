@@ -1,6 +1,22 @@
-[gd_scene load_steps=4 format=3 uid="uid://seqifgtmbsxm"]
+[gd_scene load_steps=5 format=3 uid="uid://seqifgtmbsxm"]
 
 [ext_resource type="Texture2D" uid="uid://ce2yrworsoa30" path="res://icon.svg" id="1_ig7tw"]
+
+[sub_resource type="GDScript" id="GDScript_ig7tw"]
+script/source = "extends Node2D
+
+func _ready():
+	# 스크립트가 로드되자마자 출력하도록 맨 윗줄에 작성
+	print(\"[DEBUG] Main script _ready called.\")
+
+	# 대기 코드(await) 삭제함. 즉시 설정 적용.
+	get_window().transparent_bg = true
+	get_window().transparent = true
+	get_window().borderless = true
+
+	print(\"[DEBUG] Calling Auth.sign_in...\") 
+	Auth.sign_in(\"test@fake.com\", \"wrong_pass\")
+"
 
 [sub_resource type="Shader" id="Shader_0xm2m"]
 code = "shader_type canvas_item;
@@ -36,6 +52,7 @@ shader_parameter/accent_color = Color(0.6, 0.5, 0.3, 1)
 shader_parameter/roughness = 0.5
 
 [node name="Main" type="Node2D"]
+script = SubResource("GDScript_ig7tw")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_h2yge")
