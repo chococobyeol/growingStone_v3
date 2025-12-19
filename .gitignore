@@ -1,6 +1,16 @@
+# [Security]
+.env
+
 # Godot 4+ specific ignores
 .godot/
 *.translation
-export_presets.cfg
 *.import
+export_presets.cfg
+
+# [OS generated]
 .DS_Store
+Thumbs.db
+
+# [Python Cache]
+__pycache__/
+*.pyc

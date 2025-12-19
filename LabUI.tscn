@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=3 uid="uid://dl0o4g04wbj5q"]
+
+[ext_resource type="Script" uid="uid://crbjc33kfcbwe" path="res://LabUI.gd" id="1_nocpd"]
+
+[node name="LabUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_nocpd")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.78431374)
+
+[node name="BtnGacha" type="Button" parent="."]
+layout_mode = 0
+offset_left = 482.0
+offset_top = 108.0
+offset_right = 603.0
+offset_bottom = 174.0
+text = "원소 뽑기 (1Stone)"
+
+[node name="BtnClose" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1069.0
+offset_top = 8.0
+offset_right = 1146.0
+offset_bottom = 85.0
+
+[node name="LogLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 299.0
+offset_top = 178.0
+offset_right = 800.0
+offset_bottom = 257.0
+
+[node name="BtnSynthesize" type="Button" parent="."]
+layout_mode = 0
+offset_left = 734.0
+offset_top = 297.0
+offset_right = 856.0
+offset_bottom = 391.0
+text = "합성"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 0
+offset_left = 157.0
+offset_top = 299.0
+offset_right = 557.0
+offset_bottom = 451.0
+
+[node name="InventoryList" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

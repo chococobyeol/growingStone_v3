@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://bqi0bn2e3ixoq"]
+[gd_scene load_steps=8 format=3 uid="uid://bqi0bn2e3ixoq"]
 
 [ext_resource type="Texture2D" uid="uid://ce2yrworsoa30" path="res://icon.svg" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://dlwgn0ljw3p7g" path="res://Main.gd" id="1_uu6xs"]
 [ext_resource type="Script" uid="uid://n4scky77gla4" path="res://Stone.gd" id="2_cm0pq"]
+[ext_resource type="PackedScene" uid="uid://dl0o4g04wbj5q" path="res://LabUI.tscn" id="2_fos0i"]
 [ext_resource type="Shader" uid="uid://bultftaoqgo6n" path="res://Stone.gdshader" id="2_r0du0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cm0pq"]
@@ -16,6 +17,9 @@ radius = 58.249462
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_uu6xs")
+
+[node name="LabUI" parent="." instance=ExtResource("2_fos0i")]
+visible = false
 
 [node name="Stone" type="RigidBody2D" parent="."]
 position = Vector2(576, 324)
