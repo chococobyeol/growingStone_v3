@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3 uid="uid://cr1iw4fjgw5pg"]
+
+[ext_resource type="Script" uid="uid://c8k804wrvb3ac" path="res://ElementCell.gd" id="1_c46dj"]
+[ext_resource type="LabelSettings" uid="uid://bv1a0jlpf3kjl" path="res://ElementSymbol_Bold.tres" id="2_cog6b"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8spau"]
+bg_color = Color(0.7411765, 0.8509804, 0.7490196, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.19607843, 0.1764706, 0.16078432, 1)
+
+[node name="PanelContainer" type="PanelContainer"]
+custom_minimum_size = Vector2(60, 60)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_8spau")
+script = ExtResource("1_c46dj")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 22
+label_settings = ExtResource("2_cog6b")
+horizontal_alignment = 1
+vertical_alignment = 1

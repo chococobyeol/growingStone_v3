@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3 uid="uid://cuy4804v47ejp"]
+
+[ext_resource type="Script" uid="uid://dm2r7ttj82adr" path="res://PeriodicTable.gd" id="1_6vuiq"]
+[ext_resource type="Theme" uid="uid://ccb5skb1wqq0r" path="res://MainTheme.theme" id="1_6yley"]
+
+[node name="PeriodicTable" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_6yley")
+script = ExtResource("1_6vuiq")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.2159017, 0.21590173, 0.2159017, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TableGrid" type="GridContainer" parent="ScrollContainer/CenterContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 18

@@ -1,0 +1,9 @@
+[gd_resource type="LabelSettings" load_steps=2 format=3 uid="uid://bv1a0jlpf3kjl"]
+
+[ext_resource type="FontFile" uid="uid://ckpv70srdg3c0" path="res://assets/fonts/IM_Hyemin-Bold.otf" id="1_o614c"]
+
+[resource]
+font = ExtResource("1_o614c")
+font_size = 24
+font_color = Color(0.19607843, 0.1764706, 0.16078432, 1)
+outline_size = 4
