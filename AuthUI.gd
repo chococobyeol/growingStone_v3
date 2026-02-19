@@ -3,6 +3,8 @@ extends Control
 const COLOR_TEXT_SECONDARY := Color("555555")
 const COLOR_ERROR := Color("D9534F")
 const COLOR_SUCCESS := Color("2E7D32")
+var is_dragging_window := false
+var drag_offset := Vector2i.ZERO
 
 @onready var email_input = $CenterContainer/Card/CardMargin/VBox/EmailInput
 @onready var password_input = $CenterContainer/Card/CardMargin/VBox/PasswordInput
@@ -80,6 +82,20 @@ func _on_en_pressed():
 
 func _on_close_pressed():
 	get_tree().quit()
+
+func _input(event):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			is_dragging_window = true
+			drag_offset = DisplayServer.mouse_get_position() - get_window().position
+		else:
+			is_dragging_window = false
+
+func _process(_delta):
+	if is_dragging_window and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		get_window().position = DisplayServer.mouse_get_position() - drag_offset
+	elif is_dragging_window:
+		is_dragging_window = false
 
 func _notification(what):
 	if what == NOTIFICATION_RESIZED and is_node_ready():
