@@ -1,6 +1,6 @@
 extends Node2D
 
-var is_widget_mode = true
+var is_widget_mode = false
 var is_dragging = false
 var drag_offset = Vector2i.ZERO
 @onready var lab_ui = $LabUI # 노드 경로 확인 필수!
@@ -13,8 +13,8 @@ func _ready():
 	
 	await get_tree().process_frame
 	
-	# 창 모드 설정
-	apply_widget_mode() 
+	# 메인 화면은 정보량이 많아 일반 창 모드로 시작
+	apply_window_mode()
 	
 	print("[Main] Requesting Game Data...")
 	
@@ -79,17 +79,22 @@ func toggle_mode():
 
 func apply_widget_mode():
 	var window = get_window()
+	window.size = Vector2i(1000, 700)
 	window.transparent_bg = true
 	window.transparent = true
 	window.borderless = true
 	window.always_on_top = true
+	window.unresizable = true
 
 func apply_window_mode():
 	var window = get_window()
+	window.size = Vector2i(1600, 1000)
 	window.borderless = false
 	window.transparent = false
 	window.transparent_bg = false
 	window.always_on_top = false
+	window.unresizable = false
+	window.move_to_center()
 
 
 	# Main.gd

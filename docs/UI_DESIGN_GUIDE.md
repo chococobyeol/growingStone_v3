@@ -1,103 +1,90 @@
-# GrowingStone UI Design Guide (v1)
+# GrowingStone UI Design Guide (v2 - implementation strict)
 
 ## 1) 목적
-- 로그인/회원가입 포함 초기 UX를 일관된 톤으로 통일한다.
-- Godot `Control + Container + Theme` 기반으로 해상도 변화에도 깨지지 않는 UI를 만든다.
-- 아이콘/이미지 에셋은 기존 리소스를 재사용하고, 스타일 토큰부터 먼저 고정한다.
+- 구현 중 해석 차이로 재작업이 발생하지 않도록, 로그인 UI 규격을 고정한다.
+- 이 문서는 "가이드"가 아니라 "실행 스펙"으로 사용한다.
 
-## 2) 스타일 방향
-- 키워드: `미니멀`, `부드러운 파스텔`, `돌/자연 느낌`, `여백 중심`
-- 레이아웃: 중앙 카드형 + 수직 흐름 + 큰 터치 타겟 버튼
-- 대비: 배경은 밝게, CTA 버튼은 중간 채도 그린으로 강조
+## 2) 우선순위 규칙
+- `MUST`: 반드시 지켜야 함. 변경 시 사전 합의 필요.
+- `SHOULD`: 권장. 상황상 불가할 때만 예외 허용.
+- `MUST NOT`: 금지.
 
-## 3) 디자인 토큰
+## 3) 고정 토큰 (MUST)
 
 ### 색상
-- `bg/app`: `#DCDCDC` (앱 전체 배경)
-- `bg/card`: `#F2F2F2` (카드 배경)
+- `bg/card`: `#F2F2F2`
 - `text/primary`: `#1F1F1F`
 - `text/secondary`: `#555555`
-- `brand/primary`: `#ACD8B9` (메인 버튼, 이미지 메인 컬러 기준)
+- `brand/primary`: `#ACD8B9`
 - `brand/primary_hover`: `#9FCFAA`
 - `brand/primary_pressed`: `#8FC39A`
 - `state/error`: `#D9534F`
 - `state/success`: `#2E7D32`
-- 버튼 텍스트는 `#1F1F1F` 사용 (`#FFFFFF` 지양, 대비 부족)
-- 텍스트 대비 목표: 일반 텍스트 `4.5:1` 이상 (WCAG AA)
 
-### 타이포그래피
-- 타이틀: 48~56
-- 섹션/설명: 18~24
-- 본문/입력/버튼: 24~32
-- 상태 메시지: 16~20
+### 타이포그래피 매핑
+- `title`: `온글잎 의연체.ttf` (MUST)
+- `subtitle`: `IM_Hyemin-Regular.otf` (MUST)
+- `input/button/status/lang`: `IM_Hyemin-Regular.otf` (MUST)
 
-### 간격/치수
-- 카드 내부 패딩: 32
-- 요소 간 기본 간격: 12
-- 섹션 간 간격: 24
-- 입력/버튼 높이: 44~56
-- 최소 터치 타겟: 44 이상
+### 폰트 크기 기준
+- `title`: 56 (SHOULD: 52~60)
+- `subtitle`: 20 (SHOULD: 18~22)
+- `input/button/lang`: 24 (SHOULD: 20~24)
+- `status`: 18 (SHOULD: 16~18)
 
-## 4) 컴포넌트 규격
-
-### 입력창 (LineEdit)
-- 폭: 카드 폭 기준 100%
-- 높이: 44 이상
-- Placeholder 사용, 라벨은 필요 시 상단 배치
-- 비밀번호는 `secret=true`
-
-### 기본 버튼 (Button)
-- 폭: 카드 폭 기준 100%
-- 높이: 44~56
-- 모서리 라운드 일관 적용
-- Hover/Pressed 색상 토큰 적용
-
-### 상태 라벨 (Label)
-- 기본 문구는 비워둔다.
-- 성공/오류 메시지는 색상으로 구분한다.
-- `autowrap` 사용 시 `custom_minimum_size`를 반드시 지정한다.
-
-## 5) 로그인 화면 구조
+## 4) 로그인 화면 구조 (MUST)
 - 루트: `Control`
 - 중앙 정렬: `CenterContainer`
-- 카드: `PanelContainer` (내부 `MarginContainer`)
-- 본문: `VBoxContainer`
-  - Title Label
-  - Subtitle Label
-  - Email LineEdit
-  - Password LineEdit
-  - Login Button
-  - SignUp Button
-  - Status Label
-  - Language Row (`HBoxContainer`)
+- 카드: `PanelContainer` (`custom_minimum_size`: `820x560`)
+- 카드 내부: `MarginContainer` + `VBoxContainer`
+- 필수 컴포넌트 순서:
+  1. Title
+  2. Subtitle
+  3. Email
+  4. Password
+  5. Login
+  6. SignUp
+  7. Status
+  8. Language row
+  9. Close button (카드 외곽 코너 겹침)
 
-## 6) 상태 정의
-- `idle`: 초기 상태, 상태 라벨 비움
-- `loading`: 버튼 비활성 + "처리 중..."
-- `success`: 성공 메시지 + 다음 화면 전환
+## 5) Close(X) 버튼 스펙 (MUST)
+- 형태: 원형 버튼
+- 배치: 카드 우상단 코너에 "겹치게" 배치
+- 아이콘: 텍스트 `X` 금지, 벡터 도형/아이콘 사용
+- 색상: 중립 회색 계열만 사용
+- 크기: 버튼 40x40
+- 동작: 클릭 시 앱 종료 (`get_tree().quit()`)
+
+## 6) 상태/행동 스펙 (MUST)
+- `idle`: status 비움
+- `loading`: 로그인/회원가입 버튼 비활성
+- `success`: 성공 메시지 후 `Main.tscn` 이동
 - `error`: 서버 메시지 우선 노출
+- 이메일 입력값은 `trim + lowercase` 처리
 
-## 7) 아이콘/이미지 사용 규칙
-- 현재 보유 에셋 우선 사용
-- 새 에셋 추가 시 파일명 규칙:
-  - `ui_icon_<name>.png`
-  - `ui_illust_<name>.png`
-- 컬러가 맞지 않으면 원본 수정 대신 `modulate` 또는 Theme 우선
+## 7) 창/레이아웃 규칙 (MUST)
+- 로그인 시작 시 "첫 프레임 쏠림" 발생하면 안 됨
+- 런타임에서 창 크기/모드 반복 변경 금지
+- 컨테이너 기반 배치 유지 (`CenterContainer`, `VBoxContainer`)
 
-## 8) 반응형 규칙
-- 절대 좌표(`offset`) 중심 배치 금지
-- `Container` 기반 배치 우선
-- 작은 창에서도 버튼/입력창 가로폭 유지, 세로 스크롤 허용
+## 8) 변경 금지 항목 (MUST NOT)
+- 사용자 요청 없이 메인 색상 팔레트 변경 금지
+- 사용자 요청 없이 폰트 매핑 변경 금지
+- 사용자 요청 없이 배경 추가/제거 금지
+- 사용자 요청 없이 버튼 위치 규칙 변경 금지
 
-## 9) 구현 순서 (권장)
-1. 로그인/회원가입 화면부터 토큰 적용
-2. 공용 Theme 리소스 분리 (`res://ui/theme/*.tres`)
-3. 버튼/입력/라벨 공용 스타일 타입 정의
-4. 메인/연구소/소셜 화면으로 확장
+## 9) 수용 기준 (Acceptance Criteria)
+- 첫 실행에서 UI 쏠림/깨짐 없음
+- `X` 버튼이 카드 우상단 코너에 시각적으로 겹쳐 보임
+- `X`는 텍스트가 아닌 벡터 아이콘으로 표시됨
+- 타이틀은 온글잎 의연체, 나머지는 iM 혜민체
+- 로그인/회원가입/에러 상태가 색/문구로 구분됨
+- Godot 경고(`autowrap minimum size`) 없음
 
-## 10) 완료 기준 (DoD)
-- 첫 실행 시 레이아웃 깨짐 없음
-- 로그인/회원가입/오류 메시지 스타일 일관
-- 해상도 변경 시 UI 비틀림 없음
-- 텍스트 잘림/겹침 없음
-- 경고(`autowrap minimum size`) 없음
+## 10) 작업 체크리스트
+- [ ] 폰트 파일 경로 존재 확인
+- [ ] 폰트 매핑 표와 실제 씬 일치
+- [ ] Close 버튼 위치 스펙 일치
+- [ ] 상태 메시지 색상 일치
+- [ ] 첫 실행 스모크 테스트 완료
