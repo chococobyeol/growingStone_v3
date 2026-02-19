@@ -11,11 +11,14 @@ const COLOR_SUCCESS := Color("2E7D32")
 @onready var status_label = $CenterContainer/Card/CardMargin/VBox/StatusLabel
 @onready var ko_button = $CenterContainer/Card/CardMargin/VBox/LangRow/KoButton
 @onready var en_button = $CenterContainer/Card/CardMargin/VBox/LangRow/EnButton
-@onready var close_button = $CenterContainer/Card/CardMargin/VBox/HeaderRow/CloseButton
+@onready var card = $CenterContainer/Card
+@onready var close_button = $CloseButton
 
 func _ready():
 	_connect_signals_once()
 	_set_status("", COLOR_TEXT_SECONDARY)
+	await get_tree().process_frame
+	_position_close_button()
 
 func _connect_signals_once():
 	if not signin_button.pressed.is_connected(_on_signin_pressed):
@@ -77,3 +80,14 @@ func _on_en_pressed():
 
 func _on_close_pressed():
 	get_tree().quit()
+
+func _notification(what):
+	if what == NOTIFICATION_RESIZED and is_node_ready():
+		_position_close_button()
+
+func _position_close_button():
+	# 카드 우상단 바깥 코너에 고정 배치
+	var btn_size = close_button.size
+	var card_pos = card.position
+	var card_size = card.size
+	close_button.position = card_pos + Vector2(card_size.x - btn_size.x * 0.62, -btn_size.y * 0.38)
