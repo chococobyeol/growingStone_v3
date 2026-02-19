@@ -1,9 +1,7 @@
 extends Node
 
-# ▼ 본인 정보 입력 (따옴표 지우지 마세요!) ▼
-const URL = "https://qrfulgjculsbtxgyfzpk.supabase.co"
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyZnVsZ2pjdWxzYnR4Z3lmenBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwMzc4MzgsImV4cCI6MjA3OTYxMzgzOH0.H1jMawnCj0p2tJtYDYQICcQkfWpVqF5OsJImrMVlDV8"
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+var URL := ""
+var KEY := ""
 
 signal auth_success
 signal auth_failed(error_message)
@@ -12,7 +10,69 @@ signal auth_failed(error_message)
 var access_token = ""
 var user_id = ""
 
+func _ready():
+	_load_auth_config()
+
+func _load_auth_config():
+	var file_env := {}
+	for env_path in ["res://.env", "res://data_audit/.env", "user://.env"]:
+		file_env.merge(_read_env_file(env_path), true)
+
+	var file_url = str(file_env.get("SUPABASE_URL", "")).strip_edges()
+	var file_key = str(file_env.get("SUPABASE_ANON_KEY", file_env.get("SUPABASE_KEY", ""))).strip_edges()
+
+	var env_url = OS.get_environment("SUPABASE_URL").strip_edges()
+	var env_key = OS.get_environment("SUPABASE_ANON_KEY").strip_edges()
+	if env_key == "":
+		env_key = OS.get_environment("SUPABASE_KEY").strip_edges()
+
+	URL = env_url if env_url != "" else file_url
+	KEY = env_key if env_key != "" else file_key
+
+	if URL == "" or KEY == "":
+		print("[WARN] SUPABASE_URL / SUPABASE_ANON_KEY not found in env.")
+	else:
+		print("[INFO] Supabase auth config loaded from env.")
+
+func _read_env_file(path: String) -> Dictionary:
+	var out := {}
+	if not FileAccess.file_exists(path):
+		return out
+
+	var f = FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return out
+
+	while not f.eof_reached():
+		var line = f.get_line().strip_edges()
+		if line == "" or line.begins_with("#"):
+			continue
+		var eq_idx = line.find("=")
+		if eq_idx <= 0:
+			continue
+		var k = line.substr(0, eq_idx).strip_edges()
+		var v = line.substr(eq_idx + 1).strip_edges()
+		if v.begins_with("\"") and v.ends_with("\"") and v.length() >= 2:
+			v = v.substr(1, v.length() - 2)
+		out[k] = v
+
+	return out
+
+func _ensure_auth_config() -> bool:
+	if URL == "" or KEY == "":
+		_load_auth_config()
+
+	if URL == "" or KEY == "":
+		var msg = "Missing SUPABASE_URL or SUPABASE_ANON_KEY."
+		print("[ERROR] ", msg)
+		emit_signal("auth_failed", msg)
+		return false
+	return true
+
 func sign_in(email, password):
+	if not _ensure_auth_config():
+		return
+
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_signin_completed.bind(http))
@@ -30,6 +90,9 @@ func sign_in(email, password):
 		http.queue_free()
 
 func sign_up(email, password):
+	if not _ensure_auth_config():
+		return
+
 	var http = HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_signup_completed.bind(http))

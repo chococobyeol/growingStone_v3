@@ -1,5 +1,6 @@
 import psycopg2
 import os
+import re
 from urllib.parse import quote
 from dotenv import load_dotenv
 
@@ -48,7 +49,10 @@ def upload_v15_data(file_path):
 
         for i, query in enumerate(queries):
             try:
-                cur.execute(query + ";")
+                # legacy 데이터의 빈 crystal system("")를 canonical 값("unknown")으로 정규화
+                normalized_query = query.replace('"system": ""', '"system": "unknown"')
+                normalized_query = re.sub(r",\s*''\s*\)\s*$", ", 'unknown')", normalized_query)
+                cur.execute(normalized_query + ";")
                 if i % 100 == 0:
                     print(f"🚀 업로드 진행 중: {i}/{total} 완료")
             except Exception as e:
