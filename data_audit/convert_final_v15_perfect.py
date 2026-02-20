@@ -31,9 +31,44 @@ IDIOCHROMATIC_COLORS = {
     'Au': '#FFD700', 'Ag': '#C0C0C0', 'As': '#808080', 'Sb': '#A9A9A9', 'Bi': '#D2B48C'
 }
 
+# PM별 광물 종 수 (Hazen & Morrison 2022, docs/PM_DISTRIBUTION.md)
+PM_SPECIES_COUNT = {
+    1: 22, 2: 1, 3: 48, 4: 47, 5: 94, 6: 205, 7: 123, 8: 93, 9: 127, 10: 107,
+    11: 36, 12: 129, 13: 67, 14: 61, 15: 32, 16: 83, 17: 51, 18: 4, 19: 143,
+    20: 45, 21: 79, 22: 247, 23: 398, 24: 74, 25: 210, 26: 250, 27: 9, 28: 10,
+    29: 7, 30: 16, 31: 356, 32: 412, 33: 797, 34: 564, 35: 726, 36: 291, 37: 135,
+    38: 108, 39: 70, 40: 319, 41: 16, 42: 15, 43: 9, 44: 11, 45: 424, 46: 52,
+    47: 1998, 48: 71, 49: 77, 50: 273, 51: 128, 52: 72, 53: 117, 54: 234,
+    55: 264, 56: 143, 57: 49
+}
+
 # ==========================================
 # 2. 로직 함수 (정밀 고증 시스템)
 # ==========================================
+
+def parse_pm_ids(paragenetic_modes_str):
+    """Paragenetic Modes 문자열에서 PM 번호 목록 추출. 예: 'PM47 - ... PM50 - ...' -> [47, 50]"""
+    if not paragenetic_modes_str or not isinstance(paragenetic_modes_str, str):
+        return []
+    pm_ids = []
+    for m in re.findall(r'PM(\d+)', paragenetic_modes_str, re.IGNORECASE):
+        n = int(m)
+        if 1 <= n <= 57 and n not in pm_ids:
+            pm_ids.append(n)
+    return pm_ids
+
+def compute_gacha_weight(pm_ids):
+    """광물별 뽑기 가중치 = 출현 PM들의 종 수 합. PM 없으면 1.0 (동일 확률)."""
+    if not pm_ids:
+        return 1.0
+    total = sum(PM_SPECIES_COUNT.get(pm, 0) for pm in pm_ids)
+    return max(1.0, float(total))
+
+def pm_ids_to_sql_array(pm_ids):
+    """[47, 50] -> '{47,50}' (PostgreSQL int[] 리터럴)"""
+    if not pm_ids:
+        return '{}'
+    return '{' + ','.join(str(p) for p in sorted(pm_ids)) + '}'
 
 def is_pure_compound(formula):
     """철저한 고증: 고용체, 변수, 공석 배제"""
@@ -109,10 +144,10 @@ def main():
     # 스크립트 파일의 현재 위치를 파악하여 경로 설정
     base_path = os.path.dirname(os.path.abspath(__file__))
     input_csv = os.path.join(base_path, 'ima_list.csv')
-    output_sql = os.path.join(base_path, 'import_minerals_v15.sql')
-    output_csv = os.path.join(base_path, 'minerals_audit_v15.csv')
+    output_sql = os.path.join(base_path, 'import_minerals_v16.sql')
+    output_csv = os.path.join(base_path, 'minerals_audit_v16.csv')
 
-    print(f"💎 [v15] 전 원소 표준 원자량 적용 변환 시작...")
+    print(f"💎 [v16] 전 원소 표준 원자량 + PM/pm_ids/gacha_weight 변환 시작...")
     
     if not os.path.exists(input_csv):
         print(f"❌ 에러: 파일을 찾을 수 없습니다 -> {input_csv}")
@@ -128,38 +163,45 @@ def main():
         for row in reader:
             name, formula = row.get('Mineral Name (plain)', '').strip(), row.get('IMA Chemistry', '').strip()
             crystal = row.get('Crystal Systems', '').split(',')[0].strip()
-            
+            if not crystal:
+                crystal = 'unknown'
+            paragenetic_modes = row.get('Paragenetic Modes', '').strip()
+
             if not is_pure_compound(formula): continue
-            
+
             elements = parse_chemical_formula(formula)
             if not elements: continue
-            
+
             mass = 0.0
             for el, qty in elements.items():
                 mass += ATOMIC_WEIGHTS[el] * qty
                 used_elements.add(el)
-            
+
             if mass == 0: continue
+
+            pm_ids = parse_pm_ids(paragenetic_modes)
+            gacha_weight = round(compute_gacha_weight(pm_ids), 4)
+            pm_ids_sql = pm_ids_to_sql_array(pm_ids)
 
             color_hex = predict_verified_color(elements, formula)
             dna_json = generate_dna(crystal, color_hex)
             elements_json = json.dumps({k: round(v, 2) for k, v in elements.items()})
             safe_name = name.replace("'", "''")
 
-            sql = f"INSERT INTO public.mineral_recipes (name, formula, elements, base_density, base_color, dna, crystal_system) VALUES ('{safe_name}', '{formula}', '{elements_json}', {round(mass, 4)}, '{color_hex}', '{dna_json}', '{crystal}');"
+            sql = f"INSERT INTO public.mineral_recipes (name, formula, elements, base_density, base_color, dna, crystal_system, pm_ids, gacha_weight) VALUES ('{safe_name}', '{formula}', '{elements_json}', {round(mass, 4)}, '{color_hex}', '{dna_json}', '{crystal}', '{pm_ids_sql}', {gacha_weight});"
             sql_lines.append(sql)
-            csv_rows.append({"name": name, "formula": formula, "elements": elements_json, "density": round(mass, 4), "color": color_hex, "crystal": crystal})
+            csv_rows.append({"name": name, "formula": formula, "elements": elements_json, "density": round(mass, 4), "color": color_hex, "crystal": crystal, "pm_ids": pm_ids_sql, "gacha_weight": gacha_weight})
             count += 1
 
     # 파일 저장
     with open(output_sql, 'w', encoding='utf-8') as f: f.write("\n".join(sql_lines))
     with open(output_csv, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=["name", "formula", "elements", "density", "color", "crystal"])
+        writer = csv.DictWriter(f, fieldnames=["name", "formula", "elements", "density", "color", "crystal", "pm_ids", "gacha_weight"])
         writer.writeheader(); writer.writerows(csv_rows)
 
     # 통계 리포트 출력
     print("\n" + "="*60)
-    print(f"✨ v15 고증 변환 완료 리포트")
+    print(f"✨ v16 고증 변환 완료 리포트")
     print(f"- 순수 광물 데이터 수: {count}개")
     print(f"- 실제 사용된 원소 종류: {len(used_elements)}종")
     print(f"- 사용 원소 목록: {', '.join(sorted(list(used_elements)))}")

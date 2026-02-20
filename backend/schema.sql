@@ -54,6 +54,8 @@ create table if not exists public.mineral_recipes (
   crystal_system text not null default 'unknown', -- triclinic/monoclinic/orthorhombic/tetragonal/trigonal/hexagonal/cubic 등
   base_density double precision not null check (base_density > 0),
   base_color text not null default '#ffffff',
+  pm_ids int[] not null default '{}',                    -- Paragenetic Mode 번호 목록 (추적/검증용)
+  gacha_weight double precision not null default 1.0 check (gacha_weight > 0),  -- 원소 뽑기 확률 가중치
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
   constraint recipes_elements_obj_chk check (jsonb_typeof(elements) = 'object'),
@@ -75,10 +77,12 @@ create table if not exists public.mineral_recipes (
   constraint recipes_crystal_system_match_dna_chk check (lower(crystal_system) = lower(dna->>'system'))
 );
 
--- 기존 환경(이전 스키마)에서 마이그레이션 시 컬럼 보강 (dna 정본)
+-- 기존 환경(이전 스키마)에서 마이그레이션 시 컬럼 보강 (dna 정본, pm_ids, gacha_weight)
 alter table public.mineral_recipes
   add column if not exists dna jsonb,
-  add column if not exists crystal_system text;
+  add column if not exists crystal_system text,
+  add column if not exists pm_ids int[] default '{}',
+  add column if not exists gacha_weight double precision default 1.0;
 
 alter table public.mineral_recipes
   drop constraint if exists recipes_crystal_structure_obj_chk;
