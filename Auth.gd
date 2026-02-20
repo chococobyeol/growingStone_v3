@@ -140,8 +140,19 @@ func _on_signup_completed(_result, response_code, _headers, body, http_node):
 	print("[DEBUG] Sign Up Response: ", response_code)
 
 	if response_code == 200 or response_code == 201:
-		print("[SUCCESS] Sign Up successful.")
-		emit_signal("auth_success")
+		# Supabase 설정에 따라 signup 응답에 session(access_token)이 없을 수 있음.
+		if response and response.has("access_token") and response.has("user"):
+			access_token = str(response.access_token)
+			user_id = str(response.user.id)
+			print("[SUCCESS] Sign Up successful. ID: ", user_id)
+			emit_signal("auth_success")
+		elif response and response.has("user"):
+			user_id = str(response.user.id)
+			print("[INFO] Sign Up completed, but no session token returned.")
+			emit_signal("auth_failed", "가입 완료. 이메일 인증 후 로그인해주세요.")
+		else:
+			print("[SUCCESS] Sign Up successful.")
+			emit_signal("auth_success")
 	else:
 		print("[ERROR] Sign Up failed: ", response_code)
 		var msg = "Sign Up Failed"

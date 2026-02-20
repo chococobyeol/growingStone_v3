@@ -1,6 +1,68 @@
-[gd_scene load_steps=2 format=3 uid="uid://dl0o4g04wbj5q"]
+[gd_scene load_steps=8 format=3 uid="uid://dl0o4g04wbj5q"]
 
 [ext_resource type="Script" uid="uid://crbjc33kfcbwe" path="res://LabUI.gd" id="1_nocpd"]
+[ext_resource type="FontFile" uid="uid://x35jxbheh8ej" path="res://assets/fonts/온글잎 의연체.ttf" id="2_ownglyph"]
+[ext_resource type="FontFile" uid="uid://bgkvuqt61l4ds" path="res://assets/fonts/IM_Hyemin-Regular.otf" id="3_imhyemin"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
+content_margin_left = 22.0
+content_margin_top = 20.0
+content_margin_right = 22.0
+content_margin_bottom = 20.0
+bg_color = Color(0.94902, 0.94902, 0.94902, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outline"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.67451, 0.847059, 0.72549, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
+bg_color = Color(0.560784, 0.764706, 0.603922, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_group"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_mid"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_normal"]
+bg_color = Color(0.93, 0.93, 0.93, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_pressed"]
+bg_color = Color(0.87, 0.87, 0.87, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
 
 [node name="LabUI" type="Control"]
 layout_mode = 3
@@ -18,46 +80,218 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.78431374)
+color = Color(0, 0, 0, 0.45)
 
-[node name="BtnGacha" type="Button" parent="."]
-layout_mode = 0
-offset_left = 482.0
-offset_top = 108.0
-offset_right = 603.0
-offset_bottom = 174.0
-text = "원소 뽑기 (1Stone)"
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
 
-[node name="BtnClose" type="Button" parent="."]
-layout_mode = 0
-offset_left = 1069.0
-offset_top = 8.0
-offset_right = 1146.0
-offset_bottom = 85.0
+[node name="Card" type="PanelContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
 
-[node name="LogLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 299.0
-offset_top = 178.0
-offset_right = 800.0
-offset_bottom = 257.0
+[node name="VBox" type="VBoxContainer" parent="RootMargin/Card"]
+layout_mode = 2
+theme_override_constants/separation = 14
 
-[node name="BtnSynthesize" type="Button" parent="."]
-layout_mode = 0
-offset_left = 734.0
-offset_top = 297.0
-offset_right = 856.0
-offset_bottom = 391.0
+[node name="TopRow" type="HBoxContainer" parent="RootMargin/Card/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="RootMargin/Card/VBox/TopRow"]
+custom_minimum_size = Vector2(260, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_ownglyph")
+theme_override_font_sizes/font_size = 56
+text = "연구소"
+vertical_alignment = 1
+
+[node name="StoneBox" type="PanelContainer" parent="RootMargin/Card/VBox/TopRow"]
+custom_minimum_size = Vector2(260, 48)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_outline")
+
+[node name="StoneLabel" type="Label" parent="RootMargin/Card/VBox/TopRow/StoneBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 30
+text = "보유 스톤: 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TabGroup" type="PanelContainer" parent="RootMargin/Card/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_tab_group")
+
+[node name="TabRow" type="HBoxContainer" parent="RootMargin/Card/VBox/TabGroup"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BtnGacha" type="Button" parent="RootMargin/Card/VBox/TabGroup/TabRow"]
+custom_minimum_size = Vector2(280, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "원소 뽑기"
+
+[node name="BtnSynthesize" type="Button" parent="RootMargin/Card/VBox/TabGroup/TabRow"]
+custom_minimum_size = Vector2(160, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_mid")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 text = "합성"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
-layout_mode = 0
-offset_left = 157.0
-offset_top = 299.0
-offset_right = 557.0
-offset_bottom = 451.0
+[node name="BtnDecompose" type="Button" parent="RootMargin/Card/VBox/TabGroup/TabRow"]
+custom_minimum_size = Vector2(160, 62)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_mid")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+text = "분해"
 
-[node name="InventoryList" type="VBoxContainer" parent="ScrollContainer"]
+[node name="TabPlaceholderLabel" type="Label" parent="RootMargin/Card/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+visible = false
+theme_override_colors/font_color = Color(0.2, 0.2, 0.2, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 28
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IconRow" type="CenterContainer" parent="RootMargin/Card/VBox"]
+custom_minimum_size = Vector2(0, 122)
+layout_mode = 2
+
+[node name="IconFrame" type="PanelContainer" parent="RootMargin/Card/VBox/IconRow"]
+custom_minimum_size = Vector2(136, 136)
+layout_mode = 2
+
+[node name="BtnDrawIcon" type="Button" parent="RootMargin/Card/VBox/IconRow/IconFrame"]
+custom_minimum_size = Vector2(108, 108)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 34
+text = "뽑기"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResultPanel" type="PanelContainer" parent="RootMargin/Card/VBox"]
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_outline")
+
+[node name="LastResultLabel" type="Label" parent="RootMargin/Card/VBox/ResultPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 30
+text = "뽑기 결과창"
+vertical_alignment = 1
+
+[node name="InventoryPanel" type="PanelContainer" parent="RootMargin/Card/VBox"]
+custom_minimum_size = Vector2(0, 430)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_outline")
+
+[node name="InventoryVBox" type="VBoxContainer" parent="RootMargin/Card/VBox/InventoryPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="InventoryTitleLabel" type="Label" parent="RootMargin/Card/VBox/InventoryPanel/InventoryVBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+visible = false
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 34
+text = "보유 원소 표시 (주기율표)"
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="RootMargin/Card/VBox/InventoryPanel/InventoryVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="VBoxHolder" type="VBoxContainer" parent="RootMargin/Card/VBox/InventoryPanel/InventoryVBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RowCenter" type="HBoxContainer" parent="RootMargin/Card/VBox/InventoryPanel/InventoryVBox/ScrollContainer/VBoxHolder"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="InventoryList" type="GridContainer" parent="RootMargin/Card/VBox/InventoryPanel/InventoryVBox/ScrollContainer/VBoxHolder/RowCenter"]
+custom_minimum_size = Vector2(1500, 820)
+layout_mode = 2
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 2
+columns = 18
+
+[node name="BtnClose" type="Button" parent="."]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_close_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close_pressed")
+text = ""
+
+[node name="XStroke1" type="ColorRect" parent="BtnClose"]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 19.0
+offset_right = 29.0
+offset_bottom = 21.0
+rotation = 0.7853982
+pivot_offset = Vector2(9, 1)
+mouse_filter = 2
+color = Color(0.2, 0.2, 0.2, 1)
+
+[node name="XStroke2" type="ColorRect" parent="BtnClose"]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 19.0
+offset_right = 29.0
+offset_bottom = 21.0
+rotation = -0.7853982
+pivot_offset = Vector2(9, 1)
+mouse_filter = 2
+color = Color(0.2, 0.2, 0.2, 1)
+
+[node name="LogLabel" type="Label" parent="RootMargin/Card/VBox"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.25, 0.25, 0.25, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 24
+text = ""
+vertical_alignment = 1

@@ -32,7 +32,7 @@ $$;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   nickname text not null default '돌키우기초보',
-  minerals jsonb not null default '{"gold": 0, "rock": 0}'::jsonb,
+  minerals jsonb not null default '{"stone": 100}'::jsonb,
   created_at timestamp with time zone not null default now(),
   updated_at timestamp with time zone not null default now(),
   constraint profiles_nickname_len_chk check (char_length(nickname) between 1 and 32),
@@ -310,8 +310,8 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, nickname)
-  values (new.id, public.random_default_nickname())
+  insert into public.profiles (id, nickname, minerals)
+  values (new.id, public.random_default_nickname(), '{"stone": 100}'::jsonb)
   on conflict (id) do nothing;
   return new;
 end;

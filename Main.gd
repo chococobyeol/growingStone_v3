@@ -13,9 +13,6 @@ func _ready():
 	
 	await get_tree().process_frame
 	
-	# 메인 화면은 정보량이 많아 일반 창 모드로 시작
-	apply_window_mode()
-	
 	print("[Main] Requesting Game Data...")
 	
 	# GameManager 신호 연결
@@ -49,7 +46,6 @@ func _on_no_stone_found():
 	# [추가] 연구소 UI 열기
 	if lab_ui:
 		lab_ui.visible = true
-		apply_window_mode() # 창 모드로 변경
 
 # --- 아래는 윈도우 이동/제어 로직 (기존과 동일) ---
 func _process(_delta):
