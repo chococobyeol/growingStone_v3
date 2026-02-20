@@ -12,7 +12,7 @@ const GACHA_COST := 100
 @onready var btn_draw_icon = $RootMargin/Card/VBox/IconRow/IconFrame/BtnDrawIcon
 @onready var inventory_scroll = $RootMargin/Card/VBox/InventoryPanel/InventoryVBox/ScrollContainer
 @onready var inventory_list = $RootMargin/Card/VBox/InventoryPanel/InventoryVBox/ScrollContainer/VBoxHolder/RowCenter/InventoryList
-@onready var stone_label = $RootMargin/Card/VBox/TopRow/StoneBox/StoneLabel
+@onready var stone_label = $RootMargin/Card/VBox/TopRow/StoneBox/StoneRow/StoneLabel
 @onready var result_label = $RootMargin/Card/VBox/ResultPanel/LastResultLabel
 @onready var icon_row = $RootMargin/Card/VBox/IconRow
 @onready var result_panel = $RootMargin/Card/VBox/ResultPanel
@@ -86,8 +86,7 @@ func _sync_stone_from_profile():
 		current_stone = 0
 
 func _refresh_stone_label():
-	stone_label.text = "보유 스톤: %d" % current_stone
-	btn_draw_icon.text = "뽑기"
+	stone_label.text = str(current_stone)
 	btn_draw_icon.disabled = current_stone < GACHA_COST
 
 func _set_tab(tab_name: String):

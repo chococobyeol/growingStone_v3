@@ -1,8 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://dl0o4g04wbj5q"]
+[gd_scene load_steps=14 format=3 uid="uid://dl0o4g04wbj5q"]
 
 [ext_resource type="Script" uid="uid://crbjc33kfcbwe" path="res://LabUI.gd" id="1_nocpd"]
 [ext_resource type="FontFile" uid="uid://x35jxbheh8ej" path="res://assets/fonts/온글잎 의연체.ttf" id="2_ownglyph"]
 [ext_resource type="FontFile" uid="uid://bgkvuqt61l4ds" path="res://assets/fonts/IM_Hyemin-Regular.otf" id="3_imhyemin"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/lab_icon.png" id="4_lab_icon"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/stoneicon.png" id="5_stone_icon"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/gacha_icon.png" id="6_gacha_icon"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
 content_margin_left = 22.0
@@ -64,6 +67,66 @@ corner_radius_top_right = 20
 corner_radius_bottom_right = 20
 corner_radius_bottom_left = 20
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_draw_btn_normal"]
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.75, 0.75, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_draw_btn_pressed"]
+bg_color = Color(0.86, 0.86, 0.86, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.55, 0.55, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_draw_btn_hover"]
+bg_color = Color(0.94, 0.94, 0.94, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.62, 0.62, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_draw_btn_disabled"]
+bg_color = Color(0.9, 0.9, 0.9, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.72, 0.72, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_draw_icon_outline"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.55, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [node name="LabUI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -106,8 +169,21 @@ theme_override_constants/separation = 14
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TitleLabel" type="Label" parent="RootMargin/Card/VBox/TopRow"]
-custom_minimum_size = Vector2(260, 48)
+[node name="TitleWrap" type="HBoxContainer" parent="RootMargin/Card/VBox/TopRow"]
+custom_minimum_size = Vector2(300, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="TitleIcon" type="TextureRect" parent="RootMargin/Card/VBox/TopRow/TitleWrap"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+texture = ExtResource("4_lab_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="RootMargin/Card/VBox/TopRow/TitleWrap"]
+custom_minimum_size = Vector2(220, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
@@ -121,13 +197,25 @@ custom_minimum_size = Vector2(260, 48)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_outline")
 
-[node name="StoneLabel" type="Label" parent="RootMargin/Card/VBox/TopRow/StoneBox"]
+[node name="StoneRow" type="HBoxContainer" parent="RootMargin/Card/VBox/TopRow/StoneBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="StoneIcon" type="TextureRect" parent="RootMargin/Card/VBox/TopRow/StoneBox/StoneRow"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("5_stone_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StoneLabel" type="Label" parent="RootMargin/Card/VBox/TopRow/StoneBox/StoneRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
 theme_override_fonts/font = ExtResource("3_imhyemin")
 theme_override_font_sizes/font_size = 30
-text = "보유 스톤: 0"
-horizontal_alignment = 1
+text = "0"
+horizontal_alignment = 0
 vertical_alignment = 1
 
 [node name="TabGroup" type="PanelContainer" parent="RootMargin/Card/VBox"]
@@ -184,21 +272,64 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(0, 122)
 layout_mode = 2
 
-[node name="IconFrame" type="PanelContainer" parent="RootMargin/Card/VBox/IconRow"]
-custom_minimum_size = Vector2(136, 136)
+[node name="IconFrame" type="CenterContainer" parent="RootMargin/Card/VBox/IconRow"]
+custom_minimum_size = Vector2(120, 120)
 layout_mode = 2
 
 [node name="BtnDrawIcon" type="Button" parent="RootMargin/Card/VBox/IconRow/IconFrame"]
-custom_minimum_size = Vector2(108, 108)
+custom_minimum_size = Vector2(104, 104)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_draw_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_draw_btn_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_draw_btn_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_draw_btn_pressed")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_draw_btn_disabled")
 theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
 theme_override_fonts/font = ExtResource("3_imhyemin")
-theme_override_font_sizes/font_size = 34
-text = "뽑기"
+theme_override_font_sizes/font_size = 16
+text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="DrawContent" type="VBoxContainer" parent="RootMargin/Card/VBox/IconRow/IconFrame/BtnDrawIcon"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="DrawIconFrame" type="Control" parent="RootMargin/Card/VBox/IconRow/IconFrame/BtnDrawIcon/DrawContent"]
+custom_minimum_size = Vector2(68, 68)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="DrawIcon" type="TextureRect" parent="RootMargin/Card/VBox/IconRow/IconFrame/BtnDrawIcon/DrawContent/DrawIconFrame"]
+custom_minimum_size = Vector2(68, 68)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("6_gacha_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DrawLabel" type="Label" parent="RootMargin/Card/VBox/IconRow/IconFrame/BtnDrawIcon/DrawContent"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.08, 0.08, 0.08, 1)
+theme_override_fonts/font = ExtResource("3_imhyemin")
+theme_override_font_sizes/font_size = 16
+text = "뽑기"
+horizontal_alignment = 1
 
 [node name="ResultPanel" type="PanelContainer" parent="RootMargin/Card/VBox"]
 custom_minimum_size = Vector2(0, 118)
