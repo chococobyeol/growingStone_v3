@@ -1,8 +1,9 @@
-[gd_scene load_steps=12 format=3 uid="uid://bsubtd6gev64o"]
+[gd_scene load_steps=13 format=3 uid="uid://bsubtd6gev64o"]
 
 [ext_resource type="Script" uid="uid://022kwi1qitit" path="res://AuthUI.gd" id="1_463vv"]
 [ext_resource type="FontFile" uid="uid://x35jxbheh8ej" path="res://assets/fonts/온글잎 의연체.ttf" id="2_ownglyph"]
 [ext_resource type="FontFile" uid="uid://bgkvuqt61l4ds" path="res://assets/fonts/IM_Hyemin-Regular.otf" id="3_imhyemin"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/growstoneicon.png" id="4_title_icon"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.94902, 0.94902, 0.94902, 1)
@@ -104,13 +105,32 @@ theme_override_constants/margin_bottom = 52
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/Card/CardMargin/VBox"]
+[node name="TitleRow" type="HBoxContainer" parent="CenterContainer/Card/CardMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="TitleIconWrap" type="MarginContainer" parent="CenterContainer/Card/CardMargin/VBox/TitleRow"]
+custom_minimum_size = Vector2(152, 152)
+layout_mode = 2
+theme_override_constants/margin_bottom = 16
+
+[node name="TitleIcon" type="TextureRect" parent="CenterContainer/Card/CardMargin/VBox/TitleRow/TitleIconWrap"]
+layout_mode = 2
+texture = ExtResource("4_title_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Card/CardMargin/VBox/TitleRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.121569, 0.121569, 0.121569, 1)
 theme_override_fonts/font = ExtResource("2_ownglyph")
 theme_override_font_sizes/font_size = 100
 text = "돌 키우기"
-horizontal_alignment = 1
+
+[node name="TitleRightSpacer" type="Control" parent="CenterContainer/Card/CardMargin/VBox/TitleRow"]
+custom_minimum_size = Vector2(152, 152)
+layout_mode = 2
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/Card/CardMargin/VBox"]
 layout_mode = 2
