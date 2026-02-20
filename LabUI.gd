@@ -24,6 +24,8 @@ var selected_ingredients = {}
 var current_stone := 0
 var current_tab := "gacha"
 var material_amounts: Dictionary = {}
+var is_dragging_window := false
+var drag_offset := Vector2i.ZERO
 
 func _ready():
 	_fit_to_viewport()
@@ -68,7 +70,6 @@ func _notification(what):
 
 func _on_close_pressed():
 	visible = false
-	GameManager.fetch_user_stone()
 
 func _position_close_button():
 	if card == null or btn_close == null:
@@ -77,6 +78,24 @@ func _position_close_button():
 	var card_pos = card.position
 	var card_size = card.size
 	btn_close.position = card_pos + Vector2(card_size.x - btn_size.x * 0.62, -btn_size.y * 0.38)
+
+func _input(event):
+	if not visible:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			is_dragging_window = true
+			drag_offset = DisplayServer.mouse_get_position() - get_window().position
+		else:
+			is_dragging_window = false
+
+func _process(_delta):
+	if not visible:
+		return
+	if is_dragging_window and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		get_window().position = DisplayServer.mouse_get_position() - drag_offset
+	elif is_dragging_window:
+		is_dragging_window = false
 
 func _sync_stone_from_profile():
 	var minerals = GameManager.my_profile.get("minerals", {})

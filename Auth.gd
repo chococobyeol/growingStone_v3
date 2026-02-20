@@ -2,6 +2,8 @@ extends Node
 
 var URL := ""
 var KEY := ""
+const FALLBACK_SUPABASE_URL := "https://xfjlxtdhnwwenkpcvtpv.supabase.co"
+const FALLBACK_SUPABASE_ANON_KEY := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhmamx4dGRobnd3ZW5rcGN2dHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0OTk5NjAsImV4cCI6MjA4NzA3NTk2MH0.DDf5RAUaPZWiheeXKeN9KVlsuiVW31g9HFxzCfLLLT0"
 
 signal auth_success
 signal auth_failed(error_message)
@@ -14,49 +16,9 @@ func _ready():
 	_load_auth_config()
 
 func _load_auth_config():
-	var file_env := {}
-	for env_path in ["res://.env", "res://data_audit/.env", "user://.env"]:
-		file_env.merge(_read_env_file(env_path), true)
-
-	var file_url = str(file_env.get("SUPABASE_URL", "")).strip_edges()
-	var file_key = str(file_env.get("SUPABASE_ANON_KEY", file_env.get("SUPABASE_KEY", ""))).strip_edges()
-
-	var env_url = OS.get_environment("SUPABASE_URL").strip_edges()
-	var env_key = OS.get_environment("SUPABASE_ANON_KEY").strip_edges()
-	if env_key == "":
-		env_key = OS.get_environment("SUPABASE_KEY").strip_edges()
-
-	URL = env_url if env_url != "" else file_url
-	KEY = env_key if env_key != "" else file_key
-
-	if URL == "" or KEY == "":
-		print("[WARN] SUPABASE_URL / SUPABASE_ANON_KEY not found in env.")
-	else:
-		print("[INFO] Supabase auth config loaded from env.")
-
-func _read_env_file(path: String) -> Dictionary:
-	var out := {}
-	if not FileAccess.file_exists(path):
-		return out
-
-	var f = FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		return out
-
-	while not f.eof_reached():
-		var line = f.get_line().strip_edges()
-		if line == "" or line.begins_with("#"):
-			continue
-		var eq_idx = line.find("=")
-		if eq_idx <= 0:
-			continue
-		var k = line.substr(0, eq_idx).strip_edges()
-		var v = line.substr(eq_idx + 1).strip_edges()
-		if v.begins_with("\"") and v.ends_with("\"") and v.length() >= 2:
-			v = v.substr(1, v.length() - 2)
-		out[k] = v
-
-	return out
+	URL = FALLBACK_SUPABASE_URL
+	KEY = FALLBACK_SUPABASE_ANON_KEY
+	print("[INFO] Supabase auth config loaded (hardcoded).")
 
 func _ensure_auth_config() -> bool:
 	if URL == "" or KEY == "":

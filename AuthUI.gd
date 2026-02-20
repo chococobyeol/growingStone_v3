@@ -57,8 +57,10 @@ func _check_input():
 func _on_auth_success():
 	_set_loading(false)
 	_set_status("성공! 메인 화면으로 이동합니다.", COLOR_SUCCESS)
-	# 메인 화면으로 이동 (파일명 대소문자 주의)
-	get_tree().change_scene_to_file("res://Main.tscn")
+	# export 환경에서 파일명 대소문자까지 정확히 일치해야 함.
+	var err := get_tree().change_scene_to_file("res://main.tscn")
+	if err != OK:
+		_set_status("오류: 메인 씬 로드 실패 (%d)" % err, COLOR_ERROR)
 
 func _on_auth_failed(msg):
 	_set_loading(false)
