@@ -22,6 +22,7 @@ drop table if exists public.mineral_recipes;
 drop table if exists public.profiles;
 
 -- 4) 테이블 삭제 후 함수 삭제
+drop function if exists public.purchase_element_pack();
 drop function if exists public.handle_new_user();
 drop function if exists public.random_default_nickname();
 drop function if exists public.set_updated_at();

@@ -18,6 +18,7 @@ func _ready():
 	# GameManager 신호 연결
 	GameManager.data_loaded.connect(_on_data_loaded)
 	GameManager.no_stone_found.connect(_on_no_stone_found)
+	GameManager.profile_not_found.connect(_on_profile_not_found)
 	
 	# 데이터 로드 시작
 	GameManager.fetch_user_profile()
@@ -36,6 +37,10 @@ func _on_data_loaded():
 	
 	# 여기에 나중에 돌 이미지를 바꾸는 코드가 들어감
 	stone.visible = true
+
+# [상황 3] 프로필 없음 → 로그인 화면으로 복귀
+func _on_profile_not_found():
+	get_tree().change_scene_to_file("res://AuthUI.tscn")
 
 # [상황 2] 돌이 없을 때 -> 로그 출력 (추후 UI 띄움)
 func _on_no_stone_found():

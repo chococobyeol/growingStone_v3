@@ -42,6 +42,28 @@ PM_SPECIES_COUNT = {
     55: 264, 56: 143, 57: 49
 }
 
+# PM별 지각 할당 파이 (Rudnick & Gao, docs/PM_DISTRIBUTION.md §3)
+# 데이터 주도형: 확률 풀을 PM 종 수로 나눠 분배 → PM47 등 종 수 과다 PM의 확률 오염 차단
+PM_PIE_ALLOCATIONS = {
+    19: 0.50,  # 화강암질 심성암 (granite + granodiorite + tonalite)
+    40: 0.30,  # 변성암 (gneiss, mica schist)
+    8: 0.06,   # 고철질 화성암 (gabbro)
+    23: 0.07,  # 표층 수변 변질 (sedimentary)
+    47: 0.03,  # 저온 풍화 (수화물/H 과다 억제)
+}
+UNMAPPED_PM_PIE = 0.001  # 비지각 PM(열수·분기구 등)
+# 미등록 희귀 원소(Hg, Pb, Au, Cu 등)의 타겟 원자수비. 0.01으로 설정해 게임 내 유의미한 출현 확보
+RARE_ELEMENT_TARGET = 0.01
+
+# 지각 원자수비(Atomic Fraction) 타겟 — Rudnick & Gao 질량비 → IUPAC 원자량으로 몰분율 환산
+# Rudnick & Gao 2004 산화물 질량비 → IUPAC 원자량 몰분율 환산 (검증 반영)
+TARGET_ATOMIC_PCT = {
+    'O': 0.610, 'Si': 0.226, 'Al': 0.062, 'H': 0.029,
+    'Na': 0.025, 'Ca': 0.013, 'Fe': 0.019, 'Mg': 0.013, 'K': 0.014,
+    'Ti': 0.003, 'P': 0.001, 'Mn': 0.0005, 'F': 0.0005, 'S': 0.0002,
+    # 위 외 원소는 RARE_ELEMENT_TARGET(0.01) 적용
+}
+
 # ==========================================
 # 2. 로직 함수 (정밀 고증 시스템)
 # ==========================================
@@ -57,12 +79,31 @@ def parse_pm_ids(paragenetic_modes_str):
             pm_ids.append(n)
     return pm_ids
 
-def compute_gacha_weight(pm_ids):
-    """광물별 뽑기 가중치 = 출현 PM들의 종 수 합. PM 없으면 1.0 (동일 확률)."""
+def compute_gacha_weight(pm_ids, elements):
+    """데이터 주도형 가중치: PM 파이/종 수 분할 + 최소 희귀 원소 페널티.
+    - 1단계: PM별 할당 파이를 해당 PM의 광물 종 수로 나눔 → PM47 등 종 수 과다 오염 차단
+    - 2단계: 구성 원소 중 지각 원자수비가 가장 낮은 원소 기준 페널티 적용
+    """
+    # 1. base_weight: PM 파이 / 종 수 (광물이 여러 PM에 속하면 합산)
+    base_weight = 0.0
     if not pm_ids:
-        return 1.0
-    total = sum(PM_SPECIES_COUNT.get(pm, 0) for pm in pm_ids)
-    return max(1.0, float(total))
+        base_weight = 0.0001  # PM 미기재 = 희귀 가능성
+    else:
+        for pm in pm_ids:
+            pm_pie = PM_PIE_ALLOCATIONS.get(pm, UNMAPPED_PM_PIE)
+            species_count = PM_SPECIES_COUNT.get(pm, 1)
+            base_weight += pm_pie / species_count
+
+    # 2. 최소 희귀 원소 페널티 (Hg, Pb 등 포함 시 확률 기하급수 감소)
+    min_element_target = 1.0
+    for el in elements:
+        t = TARGET_ATOMIC_PCT.get(el, RARE_ELEMENT_TARGET)
+        if t < min_element_target:
+            min_element_target = t
+
+    final_weight = base_weight * min_element_target
+    # 하한 1e-12: 1e-6이면 극소 가중치(1e-10 등)가 수백만 배 뻥튀기되어 희귀 금속 좀비화 발생
+    return max(final_weight, 1e-12)  # PostgreSQL float8/numeric 정밀도 내, check(gacha_weight>0) 만족
 
 def pm_ids_to_sql_array(pm_ids):
     """[47, 50] -> '{47,50}' (PostgreSQL int[] 리터럴)"""
@@ -71,9 +112,18 @@ def pm_ids_to_sql_array(pm_ids):
     return '{' + ','.join(str(p) for p in sorted(pm_ids)) + '}'
 
 def is_pure_compound(formula):
-    """철저한 고증: 고용체, 변수, 공석 배제"""
-    if any(c in formula for c in [',', 'x', 'y', 'z', 'n', '☐', '≤']): return False
-    if re.search(r'\d+\.\d+', formula): return False 
+    """철저한 고증: 고용체, 변수, 공석 배제.
+    주의: 'n','z','y' 단일문자 검사는 Zn,Sn,In,Zr,Dy,Yb 등 원소기호와 충돌 → 변수 패턴만 매칭"""
+    if ',' in formula or '☐' in formula or '≤' in formula:
+        return False
+    if re.search(r'\d+\.\d+', formula):
+        return False
+    # 변수 x (Xe는 대문자 X라 제외됨)
+    if 'x' in formula:
+        return False
+    # 변수 n: ·nH2O 패턴만 (Zn,Sn,In 등 원소기호와 구분)
+    if re.search(r'·\s*n\s*[H\d]', formula):
+        return False
     return True
 
 def parse_chemical_formula(formula):
@@ -180,7 +230,8 @@ def main():
             if mass == 0: continue
 
             pm_ids = parse_pm_ids(paragenetic_modes)
-            gacha_weight = round(compute_gacha_weight(pm_ids), 4)
+            gacha_weight = compute_gacha_weight(pm_ids, elements)
+            gacha_weight = round(gacha_weight, 12)  # 1e-12 하한 보존 (8자리면 0으로 잘림)
             pm_ids_sql = pm_ids_to_sql_array(pm_ids)
 
             color_hex = predict_verified_color(elements, formula)

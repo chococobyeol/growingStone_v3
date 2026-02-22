@@ -123,13 +123,13 @@ const PERIODIC_TABLE_DATA = {
 	103: {"symbol": "Lr", "name": "Lawrencium", "row": 10, "col": 18}
 }
 
-# --- [2] 유효 원소 목록 (v15 변환 결과 기반 66종) ---
+# --- [2] 유효 원소 목록 (v16 변환 결과 기반 70종, is_pure_compound 수정으로 Zn/In/Sn/Mn 등 추가) ---
 const VALID_ELEMENTS = [
-	"Ag", "Al", "As", "Au", "B", "Ba", "Be", "Bi", "Br", "C", "Ca", "Cd", "Ce", "Cl", "Co", 
-	"Cr", "Cs", "Cu", "F", "Fe", "Ga", "Gd", "Ge", "H", "Hf", "Hg", "I", "Ir", "K", "La", 
-	"Li", "Mg", "Mo", "N", "Na", "Nb", "Nd", "Ni", "O", "Os", "P", "Pb", "Pd", "Pt", "Rb", 
-	"Re", "Rh", "Ru", "S", "Sb", "Sc", "Se", "Si", "Sm", "Sr", "Ta", "Te", "Th", "Ti", 
-	"Tl", "U", "V", "W", "Y", "Yb", "Zr"
+	"Ag", "Al", "As", "Au", "B", "Ba", "Be", "Bi", "Br", "C", "Ca", "Cd", "Ce", "Cl", "Co",
+	"Cr", "Cs", "Cu", "F", "Fe", "Ga", "Gd", "Ge", "H", "Hf", "Hg", "I", "In", "Ir", "K", "La",
+	"Li", "Mg", "Mn", "Mo", "N", "Na", "Nb", "Nd", "Ni", "O", "Os", "P", "Pb", "Pd", "Pt", "Rb",
+	"Re", "Rh", "Ru", "S", "Sb", "Sc", "Se", "Si", "Sm", "Sn", "Sr", "Ta", "Te", "Th", "Ti",
+	"Tl", "U", "V", "W", "Y", "Yb", "Zn", "Zr"
 ]
 
 # --- [3] 런타임 데이터 변수 ---
@@ -172,6 +172,6 @@ func find_minerals_by_element(element_symbol: String) -> Array:
 			result.append(m)
 	return result
 
-# 해당 원소가 우리 시스템(66종)에 존재하는지 확인
+# 해당 원소가 우리 시스템(70종)에 존재하는지 확인
 func is_element_valid(symbol: String) -> bool:
 	return symbol in VALID_ELEMENTS

@@ -19,6 +19,9 @@ var drag_offset := Vector2i.ZERO
 func _ready():
 	_connect_signals_once()
 	_set_status("", COLOR_TEXT_SECONDARY)
+	if GameManager.profile_error_message != "":
+		_set_status(GameManager.profile_error_message, COLOR_ERROR)
+		GameManager.profile_error_message = ""
 	await get_tree().process_frame
 	_position_close_button()
 

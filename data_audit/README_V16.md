@@ -5,7 +5,7 @@
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | pm_ids | int[] | 출현 Paragenetic Mode 번호 목록 (추적/검증용) |
-| gacha_weight | float | 원소 뽑기 확률 가중치 (PM 종 수 합) |
+| gacha_weight | float | 원소 뽑기 확률 가중치 (PM 종 수 + 지각 분포 조합) |
 
 ## 순서
 

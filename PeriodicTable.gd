@@ -49,7 +49,7 @@ func _create_element_cell(data):
 	if label:
 		label.text = data.symbol
 	
-	# 66종 유효 원소 여부에 따른 시각적 구분
+	# 70종 유효 원소 여부에 따른 시각적 구분
 	if MineralDatabase.is_element_valid(data.symbol):
 		cell.modulate = Color("#BDD9BF") # 보유/활성 후보 (민트)
 	else:

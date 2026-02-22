@@ -5,8 +5,11 @@ var my_profile = {}
 var my_stone = {}   
 
 # 신호 정의
-signal data_loaded      # 데이터 로드 완료 (게임 시작)
-signal no_stone_found   # 돌이 없음 (연구소/상점 화면으로 이동 필요)
+signal data_loaded        # 데이터 로드 완료 (게임 시작)
+signal no_stone_found     # 돌이 없음 (연구소/상점 화면으로 이동 필요)
+signal profile_not_found  # 프로필 없음 (회원가입 필요)
+
+var profile_error_message := ""  # profile_not_found 시 AuthUI에 전달할 메시지
 
 # 1. 프로필 정보 가져오기
 func fetch_user_profile():
@@ -18,7 +21,7 @@ func fetch_user_profile():
 	add_child(http)
 	http.request_completed.connect(_on_profile_fetched.bind(http))
 	
-	var api_url = Auth.URL + "/rest/v1/profiles?select=*"
+	var api_url = Auth.URL + "/rest/v1/profiles?id=eq." + Auth.user_id + "&select=*"
 	var headers = [
 		"Content-Type: application/json",
 		"apikey: " + Auth.KEY,
@@ -51,13 +54,21 @@ func fetch_user_stone():
 func _on_profile_fetched(_result, response_code, _headers, body, http_node):
 	var json = JSON.parse_string(body.get_string_from_utf8())
 	http_node.queue_free()
-	
-	if response_code == 200 and json.size() > 0:
+
+	if response_code != 200:
+		print("[ERROR] Failed to load profile: ", response_code)
+		return
+
+	if json is Array and json.size() > 0:
 		my_profile = json[0]
 		print("[SUCCESS] Profile Loaded: ", my_profile.get("nickname"))
-		fetch_user_stone() # 이어서 돌 요청
-	else:
-		print("[ERROR] Failed to load profile: ", response_code)
+		fetch_user_stone()
+		return
+
+	# 프로필 없음 → 로그인 화면으로 돌려보냄 (회원가입 유도)
+	print("[ERROR] Profile not found. Account not registered.")
+	profile_error_message = "이 계정은 등록되지 않았습니다. 회원가입을 진행해주세요."
+	emit_signal("profile_not_found")
 
 # [콜백] 돌 정보 로드 완료
 func _on_stone_fetched(_result, response_code, _headers, body, http_node):
