@@ -30,12 +30,12 @@ PRD 기준 1차 출시 및 이후 Phase별 작업 목록.
 - [ ] profiles 또는 세션 테이블에 last_access_at 추가
 - [ ] 접속 시/종료 시 서버에 접속 시간 기록
 - [ ] 성장 RPC: 서버 시간 기준으로 질량 계산 → stones.current_mass 갱신
-- [ ] Stone.gd: 서버 질량 적용, 로컬 delta 제거
+- [ ] Stone(3D/stone_3d.gd): 서버 질량 적용, 로컬 delta 제거
 
 ### 돌 렌더링
-- [ ] Stone 노드에 recipe_id/base_color/dna 전달
-- [ ] 셰이더에 광물 색상 반영
-- [ ] (선택) 결정계 기반 절차적 형태
+- [x] Stone 노드에 recipe_id/base_color/dna 전달
+- [x] 셰이더에 광물 색상 반영
+- [x] (선택) 결정계 기반 절차적 형태 (IMA SDF, 전이금속 발색, 온도/압력, 2D 툰)
 
 ### 경제·밸런스
 - [ ] 정기 스톤 지급 (일정 시간마다) 설계·구현

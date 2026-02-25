@@ -23,18 +23,20 @@ func _ready():
 	# 데이터 로드 시작
 	GameManager.fetch_user_profile()
 
-# [상황 1] 돌이 있을 때 -> 정보 출력
+# [상황 1] 돌이 있을 때 -> 정보 출력 및 Stone DNA 렌더링
 func _on_data_loaded():
 	print("============ GAME START ============")
 	print("User: ", GameManager.my_profile.get("nickname", "Unknown"))
-	
+
 	var stone_data = GameManager.my_stone
 	var recipe = stone_data.get("mineral_recipes", {})
 	var stone_name = recipe.get("name", "Unknown Mineral")
-	
-	print("Stone Type: ", stone_name) 
+
+	print("Stone Type: ", stone_name)
 	print("Mass: ", recipe.get("base_density", 0.0), " (density)")
-	
+
+	if stone and stone.has_method("apply_stone_data"):
+		stone.apply_stone_data(stone_data)
 	if lab_ui:
 		lab_ui.visible = false
 	stone.visible = true
@@ -61,7 +63,7 @@ func _process(_delta):
 		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			is_dragging = false
 
-func _on_stone_input_event(_viewport, event, _shape_idx):
+func _on_stone_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:

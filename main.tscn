@@ -1,19 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://bqi0bn2e3ixoq"]
+[gd_scene load_steps=7 format=3 uid="uid://bqi0bn2e3ixoq"]
 
-[ext_resource type="Texture2D" uid="uid://ce2yrworsoa30" path="res://icon.svg" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://dlwgn0ljw3p7g" path="res://Main.gd" id="1_uu6xs"]
-[ext_resource type="Script" uid="uid://n4scky77gla4" path="res://Stone.gd" id="2_cm0pq"]
 [ext_resource type="PackedScene" uid="uid://dl0o4g04wbj5q" path="res://LabUI.tscn" id="2_fos0i"]
-[ext_resource type="Shader" uid="uid://bultftaoqgo6n" path="res://Stone.gdshader" id="2_r0du0"]
+[ext_resource type="Script" path="res://stone_widget.gd" id="3_sw"]
+[ext_resource type="Script" path="res://stone_3d.gd" id="4_s3d"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_cm0pq"]
-shader = ExtResource("2_r0du0")
-shader_parameter/base_color = Color(0.4, 0.4, 0.45, 1)
-shader_parameter/accent_color = Color(0.6, 0.5, 0.3, 1)
-shader_parameter/roughness = 0.5
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_fos0i"]
-radius = 58.249462
+[sub_resource type="Environment" id="Environment_transparent"]
+background_mode = 0
+background_color = Color(0, 0, 0, 0)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_uu6xs")
@@ -21,18 +15,43 @@ script = ExtResource("1_uu6xs")
 [node name="LabUI" parent="." instance=ExtResource("2_fos0i")]
 visible = false
 
-[node name="Stone" type="RigidBody2D" parent="."]
+[node name="Stone" type="Control" parent="."]
 position = Vector2(576, 324)
-disable_mode = 2
-input_pickable = true
-gravity_scale = 0.0
-script = ExtResource("2_cm0pq")
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("3_sw")
+mouse_filter = 2
 
-[node name="Sprite2D" type="Sprite2D" parent="Stone"]
-material = SubResource("ShaderMaterial_cm0pq")
-texture = ExtResource("1_ig7tw")
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Stone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+stretch = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stone"]
-shape = SubResource("CircleShape2D_fos0i")
+[node name="SubViewport" type="SubViewport" parent="Stone/SubViewportContainer"]
+transparent_bg = true
+render_target_update_mode = 4
+size = Vector2i(256, 256)
 
-[connection signal="input_event" from="Stone" to="." method="_on_stone_input_event"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Stone/SubViewportContainer/SubViewport"]
+environment = SubResource("Environment_transparent")
+
+[node name="Camera3D" type="Camera3D" parent="Stone/SubViewportContainer/SubViewport"]
+current = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+projection = 1
+size = 4.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Stone/SubViewportContainer/SubViewport"]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 2, 4, 2)
+
+[node name="StoneRoot" type="Node3D" parent="Stone/SubViewportContainer/SubViewport"]
+script = ExtResource("4_s3d")
+
+[connection signal="gui_input" from="Stone" to="." method="_on_stone_gui_input"]
