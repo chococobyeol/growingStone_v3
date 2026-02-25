@@ -420,6 +420,266 @@ end;
 $$;
 
 ----------------------------------------------------------------------------
+-- [8-3] 합성 RPC (비율 매칭 -> 원소 차감 -> 돌 생성)
+----------------------------------------------------------------------------
+create or replace function public.synthesize_stone(
+  elements_ratio jsonb,
+  temperature int default 3,
+  pressure text default 'low',
+  batch_count int default 1
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  uid uuid;
+  rec record;
+  elem text;
+  coeff float8;
+  input_sum float8 := 0;
+  recipe_sum float8 := 0;
+  avail numeric(12,6);
+  needed_one numeric(12,6);
+  needed_total numeric(12,6);
+  possible numeric(12,6);
+  actual_units numeric(12,6);
+  stone_bal int;
+  final_cost int;
+  new_stone_id bigint;
+  input_norm jsonb := '{}'::jsonb;
+  consumed jsonb := '{}'::jsonb;
+  debug_log jsonb := '[]'::jsonb;
+  synthesis_cost_per_batch int := 50;
+  generated_seed bigint;
+begin
+  uid := auth.uid();
+  if uid is null then
+    return jsonb_build_object('status', 'error', 'code', 'NOT_AUTHENTICATED', 'message', 'Not authenticated');
+  end if;
+
+  if elements_ratio is null or jsonb_typeof(elements_ratio) <> 'object' or elements_ratio = '{}'::jsonb then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_INPUT', 'message', 'elements_ratio is required');
+  end if;
+
+  if batch_count is null or batch_count <= 0 then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_INPUT', 'message', 'batch_count must be >= 1');
+  end if;
+
+  if temperature < 1 or temperature > 5 then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_INPUT', 'message', 'temperature must be 1..5');
+  end if;
+
+  if pressure not in ('low', 'high') then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_INPUT', 'message', 'pressure must be low|high');
+  end if;
+
+  -- 입력 비율 정규화
+  for elem, coeff in
+    select key, (value::float8) from jsonb_each_text(elements_ratio)
+  loop
+    if coeff > 0 then
+      input_sum := input_sum + coeff;
+    end if;
+  end loop;
+
+  if input_sum <= 0 then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_INPUT', 'message', 'elements_ratio must have positive values');
+  end if;
+
+  for elem, coeff in
+    select key, (value::float8) from jsonb_each_text(elements_ratio)
+  loop
+    if coeff > 0 then
+      input_norm := input_norm || jsonb_build_object(elem, coeff / input_sum);
+    end if;
+  end loop;
+
+  debug_log := debug_log || jsonb_build_array(
+    jsonb_build_object(
+      'step', 'input_normalized',
+      'temperature', temperature,
+      'pressure', pressure,
+      'batch_count', batch_count,
+      'input_norm', input_norm
+    )
+  );
+
+  -- 비율 기반 최근접 레시피 매칭 (L1 distance)
+  with recipe_item as (
+    select mr.id, e.key as elem, (e.value::float8) as coeff
+    from public.mineral_recipes mr
+    cross join lateral jsonb_each_text(mr.elements) e
+  ),
+  recipe_sum_cte as (
+    select ri.id, sum(ri.coeff) as sum_coeff
+    from recipe_item ri
+    group by ri.id
+  ),
+  recipe_distance as (
+    select
+      mr.id,
+      mr.name,
+      mr.elements,
+      mr.dna,
+      mr.crystal_system,
+      sum(abs(coalesce((input_norm ->> ri.elem)::float8, 0.0) - (ri.coeff / rsc.sum_coeff))) as l1_distance
+    from recipe_item ri
+    join recipe_sum_cte rsc on rsc.id = ri.id
+    join public.mineral_recipes mr on mr.id = ri.id
+    group by mr.id, mr.name, mr.elements, mr.dna, mr.crystal_system
+  )
+  select id, name, elements, dna, crystal_system, l1_distance
+  into rec
+  from recipe_distance
+  order by l1_distance asc, id asc
+  limit 1;
+
+  if rec.id is null then
+    return jsonb_build_object('status', 'error', 'code', 'NO_MATCH', 'message', 'No matching recipe found');
+  end if;
+
+  debug_log := debug_log || jsonb_build_array(
+    jsonb_build_object('step', 'recipe_matched', 'recipe_id', rec.id, 'mineral_name', rec.name, 'distance', rec.l1_distance)
+  );
+
+  -- 레시피 총 계수
+  recipe_sum := 0;
+  for elem, coeff in
+    select key, (value::float8) from jsonb_each_text(rec.elements)
+  loop
+    recipe_sum := recipe_sum + coeff;
+  end loop;
+
+  if recipe_sum <= 0 then
+    return jsonb_build_object('status', 'error', 'code', 'INVALID_RECIPE', 'message', 'Recipe ratio is invalid');
+  end if;
+
+  -- 최대 합성 가능 배치 계산 (한계 원소)
+  actual_units := batch_count::numeric(12,6);
+  for elem, coeff in
+    select key, (value::float8) from jsonb_each_text(rec.elements)
+  loop
+    needed_one := round((300.0 * coeff / recipe_sum)::numeric, 6);
+    select um.amount into avail
+    from public.user_materials um
+    where um.user_id = uid and um.element = elem;
+
+    if avail is null or avail <= 0 then
+      debug_log := debug_log || jsonb_build_array(jsonb_build_object('step', 'missing_element', 'element', elem));
+      return jsonb_build_object(
+        'status', 'error',
+        'code', 'MISSING_ELEMENT',
+        'message', format('Required element missing: %s', elem),
+        'debug', debug_log
+      );
+    end if;
+
+    if needed_one <= 0 then
+      continue;
+    end if;
+    possible := round((avail / needed_one)::numeric, 6);
+    if possible < actual_units then
+      actual_units := possible;
+    end if;
+  end loop;
+
+  if actual_units <= 0 then
+    return jsonb_build_object('status', 'error', 'code', 'INSUFFICIENT_MATERIALS', 'message', 'Not enough materials', 'debug', debug_log);
+  end if;
+
+  -- 스톤 비용 계산 및 확인
+  final_cost := ceil(synthesis_cost_per_batch * actual_units);
+  select (minerals->>'stone')::int into stone_bal from public.profiles where id = uid;
+  if stone_bal is null then
+    return jsonb_build_object('status', 'error', 'code', 'PROFILE_NOT_FOUND', 'message', 'Profile not found');
+  end if;
+  if stone_bal < final_cost then
+    return jsonb_build_object(
+      'status', 'error',
+      'code', 'INSUFFICIENT_STONE',
+      'message', 'Insufficient stone',
+      'current_stone', stone_bal,
+      'required_stone', final_cost,
+      'debug', debug_log
+    );
+  end if;
+
+  -- 원소 차감
+  for elem, coeff in
+    select key, (value::float8) from jsonb_each_text(rec.elements)
+  loop
+    needed_one := round((300.0 * coeff / recipe_sum)::numeric, 6);
+    needed_total := round((needed_one * actual_units)::numeric, 6);
+
+    update public.user_materials
+    set amount = greatest(0, amount - needed_total)
+    where user_id = uid and element = elem;
+
+    consumed := consumed || jsonb_build_object(elem, needed_total);
+  end loop;
+
+  -- 스톤 차감
+  update public.profiles
+  set minerals = jsonb_set(minerals, '{stone}', to_jsonb(greatest(0, (minerals->>'stone')::int - final_cost)))
+  where id = uid;
+  select (minerals->>'stone')::int into stone_bal from public.profiles where id = uid;
+
+  generated_seed := floor(random() * 9223372036854775807)::bigint;
+
+  -- 돌 생성
+  insert into public.stones (owner_id, recipe_id, dna, name, current_mass)
+  values (
+    uid,
+    rec.id,
+    coalesce(rec.dna, '{}'::jsonb) ||
+      jsonb_build_object(
+        'seed', generated_seed,
+        'environment', jsonb_build_object('temperature', temperature, 'pressure', pressure)
+      ),
+    rec.name || ' Stone',
+    greatest(0, actual_units::float8)
+  )
+  returning id into new_stone_id;
+
+  debug_log := debug_log || jsonb_build_array(
+    jsonb_build_object(
+      'step', 'synthesis_done',
+      'stone_id', new_stone_id,
+      'actual_units', actual_units,
+      'stone_cost', final_cost
+    )
+  );
+
+  raise notice '[synthesize_stone] uid=% recipe_id=% units=% cost=% stone_id=%',
+    uid, rec.id, actual_units, final_cost, new_stone_id;
+
+  return jsonb_build_object(
+    'status', 'success',
+    'stone_id', new_stone_id,
+    'recipe_id', rec.id,
+    'mineral_name', rec.name,
+    'batch_factor', actual_units,
+    'elements_consumed', consumed,
+    'current_stone', stone_bal,
+    'stone_cost', final_cost,
+    'distance', rec.l1_distance,
+    'debug', debug_log
+  );
+exception
+  when others then
+    raise notice '[synthesize_stone][exception] %', sqlerrm;
+    return jsonb_build_object(
+      'status', 'error',
+      'code', 'SERVER_ERROR',
+      'message', sqlerrm,
+      'debug', debug_log
+    );
+end;
+$$;
+
+----------------------------------------------------------------------------
 -- [9] RLS (보안 정책)
 ----------------------------------------------------------------------------
 

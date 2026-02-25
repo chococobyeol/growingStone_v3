@@ -35,7 +35,8 @@ func _on_data_loaded():
 	print("Stone Type: ", stone_name) 
 	print("Mass: ", recipe.get("base_density", 0.0), " (density)")
 	
-	# 여기에 나중에 돌 이미지를 바꾸는 코드가 들어감
+	if lab_ui:
+		lab_ui.visible = false
 	stone.visible = true
 
 # [상황 3] 프로필 없음 → 로그인 화면으로 복귀
