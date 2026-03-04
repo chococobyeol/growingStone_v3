@@ -35,6 +35,7 @@ PRD 기준 1차 출시 및 이후 Phase별 작업 목록.
 ### 돌 렌더링
 - [ ] Stone 노드에 recipe_id/base_color/dna 전달
 - [ ] 셰이더에 광물 색상 반영
+- [x] 단결정 테스트 씬 (MCP_CRYSTAL_RENDERING_SPEC 기반: prng, crystal_generator, orbit_controller, test_crystal.tscn)
 - [ ] (선택) 결정계 기반 절차적 형태
 
 ### 경제·밸런스
