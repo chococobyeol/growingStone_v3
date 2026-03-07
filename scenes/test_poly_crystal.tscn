@@ -1,0 +1,283 @@
+; test_poly_crystal.tscn
+[gd_scene load_steps=6 format=3 uid="uid://ctest_poly_crystal_001"]
+
+[ext_resource type="Script" path="res://scripts/test_poly_crystal.gd" id="1_root"]
+[ext_resource type="Script" path="res://scripts/orbit_controller.gd" id="2_orbit"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.9, 0.95, 1, 1)
+sky_horizon_color = Color(0.7, 0.8, 0.9, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 3
+background_color = Color(0.22, 0.25, 0.3, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.45, 0.5, 1)
+
+[node name="TestPolyCrystal" type="Node3D"]
+script = ExtResource("1_root")
+
+[node name="Cluster" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.353, 0.353, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 4)
+light_color = Color(1, 0.98, 0.95, 1)
+light_energy = 1.2
+
+[node name="DirectionalLight3D2" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.5, 0.5, -0.707, 0, 0.816, 0.577, 0.866, 0.289, -0.408, 0, 6, 6)
+light_color = Color(0.9, 0.95, 1, 1)
+light_energy = 0.4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("2_orbit")
+target_path = NodePath("../Cluster")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+current = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -360.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 640.0
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "다결정 테스트"
+
+[node name="StatsLabel" type="Label" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "seed=0"
+
+[node name="H1" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H1"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "seed"
+
+[node name="SeedBox" type="SpinBox" parent="CanvasLayer/UI/VBox/H1"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 999999.0
+value = 123.0
+
+[node name="H2" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H2"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "F"
+
+[node name="FSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H2"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.01
+value = 0.55
+
+[node name="H3" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H3"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "C"
+
+[node name="CSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H3"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.01
+value = 0.55
+
+[node name="H4" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H4"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "K"
+
+[node name="KSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H4"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.01
+value = 0.45
+
+[node name="H5" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H5"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "A"
+
+[node name="ASlider" type="HSlider" parent="CanvasLayer/UI/VBox/H5"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.01
+value = 0.35
+
+[node name="H6" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H6"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "sides"
+
+[node name="SidesBox" type="SpinBox" parent="CanvasLayer/UI/VBox/H6"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 3.0
+max_value = 12.0
+value = 6.0
+
+[node name="H7" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H7"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "height"
+
+[node name="HeightSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H7"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.5
+max_value = 5.0
+step = 0.05
+value = 2.0
+
+[node name="H8" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H8"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "r_top"
+
+[node name="RadiusTopSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H8"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 2.0
+step = 0.05
+value = 0.5
+
+[node name="H9" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H9"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "r_bot"
+
+[node name="RadiusBottomSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H9"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 2.0
+step = 0.05
+value = 0.7
+
+[node name="H10" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H10"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "term"
+
+[node name="TerminationSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H10"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 1.0
+step = 0.01
+value = 0.7
+
+[node name="H11" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OrthoCheck" type="CheckBox" parent="CanvasLayer/UI/VBox/H11"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Orthographic(원근 OFF)"
+button_pressed = false
+
+[node name="H12" type="HBoxContainer" parent="CanvasLayer/UI/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/UI/VBox/H12"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "FOV"
+
+[node name="FovSlider" type="HSlider" parent="CanvasLayer/UI/VBox/H12"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 20.0
+max_value = 90.0
+step = 1.0
+value = 55.0

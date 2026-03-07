@@ -1,30 +1,31 @@
-##prng.gd
+# res://scripts/prng.gd
 class_name PRNG
-## 결정적 PRNG. seed 고정 시 동일 결과 보장.
-## Godot 내장 RNG 대신 사용해 엔진 변경 시에도 재현성을 유지.
+## 결정적 PRNG (LCG). 0 state 고정/무한루프 방지
 
-var _state: int = 0
+var _state: int = 1
 
-func _init(seed_value: int = 0) -> void:
+func _init(seed_value: int = 1) -> void:
 	seed(seed_value)
 
 func seed(s: int) -> void:
-	_state = s if s != 0 else 1
+	_state = int(s) & 0x7fffffff
+	if _state == 0:
+		_state = 1
 
-## [0, 1) 균등 분포 float
+func _next_u32() -> int:
+	# LCG: Numerical Recipes 계열
+	_state = int((_state * 1664525 + 1013904223) & 0x7fffffff)
+	if _state == 0:
+		_state = 1
+	return _state
+
 func randf() -> float:
-	_state ^= _state << 13
-	_state ^= _state >> 17
-	_state ^= _state << 5
-	_state &= 0x7FFFFFFF
-	return float(_state) / 2147483648.0
+	return float(_next_u32()) / 2147483648.0  # [0,1)
 
-## [a, b) 범위 float
 func rand_range(a: float, b: float) -> float:
 	return a + randf() * (b - a)
 
-## [a, b] 범위 int (양 끝 포함)
 func randi_range(a: int, b: int) -> int:
 	if a >= b:
 		return a
-	return a + int(randf() * (b - a + 1))
+	return a + int(randf() * float(b - a + 1))

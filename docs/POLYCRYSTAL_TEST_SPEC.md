@@ -1,228 +1,229 @@
-# 다결정(Polycrystal / Cluster) 테스트 명세서 v0.1 (Godot)
+# 다결정(PolyCrystal) 테스트/생성기 설계 명세
 
-단결정이 "프리즘+termination+chip+etch" 수준으로 안정화됐다는 전제에서, **다결정은 단결정 인스턴스를 여러 개 배치**하는 단계로 정의한다. (시간 성장 = 스케일만 커짐은 유지)
+단결정(CrystalGenerator)이 안정화된 전제에서, **다결정은 단결정 인스턴스를 여러 개 배치**하고 **모암(Matrix)** 를 함께 렌더링하는 단계로 정의한다.
+
+아래 **v2** 는 **불규칙 블롭(폐곡면) 매트릭스** 적용 및 **결정 접지(grounding)** 를 전제로 한 수정 설계 명세이다. 코드 수정 시 이 명세를 기준으로 구현한다.
 
 ---
+
+# PolyCrystal v2 설계 명세 (Matrix=Irregular Blob, Closed Mesh)
 
 ## 0. 목표
 
-* 합성 시 1회 샘플링되는 **다결정 모델**을 생성한다.
-
-* 다결정은 다음을 포함한다:
-  * 결정 개수 N
-  * 분포(어디에 붙는가)
-  * 방향(정렬/퍼짐)
-  * 공간 점유(부피감/겹침 정도)
-  * 결합 강도(서로 얼마나 "붙어 보이는가")
-
-* **테스트 씬**에서 F/C/K(+A) 파라미터를 조절하며 가시적으로 확인한다.
+* 다결정 클러스터에서 “모암/매트릭스”가 **반구(아래 뻥뚫림)**가 아니라,
+  * **아래까지 막힌 폐곡면(Closed manifold)** 형태의 **불규칙 블롭**으로 렌더링되도록 한다.
+* 카메라가 아래를 보더라도 내부가 보이지 않도록 한다.
+* 결정들이 공중에 뜨는 현상을 줄이고, 최소한 “모암 표면에 박힌” 느낌이 나도록 한다.
 
 ---
 
-## 1. 용어 및 핵심 파라미터
+## 1. 씬/노드 구성
 
-### 1.1 단결정 파라미터 (이미 구현된 것)
+### 1.1 Cluster 아래 자식 노드
+
+`Cluster (Node3D)` 하위에 아래가 생성된다.
+
+1. **Matrix (MeshInstance3D)**
+   * 불규칙 블롭 메시(폐곡면) + 불투명 재질(rough, matte)
+   * 원점 기준 대략 `y=0` 근방에 위치하도록 생성하되, **하단이 y<0까지 내려가도록** 만들어 “바닥이 있음”이 보이게 한다.
+
+2. **Crystals_i (MultiMeshInstance3D)** 여러 개
+   * preset_count 만큼.
+   * 결정은 모두 **Matrix 위/안에 박힌 것처럼** 위치 보정(sink / clamp)을 적용한다.
+
+---
+
+## 2. 파라미터 스키마 변경
+
+### 2.1 poly_crystal_generator.gd default_params 추가/수정
+
+기존:
+
+* `matrix_enabled`, `matrix_scale` 유지
+
+추가(권장):
+
+```gdscript
+"matrix": {
+  "shape": "blob",            # 고정값(향후 확장)
+  "radius": 1.2,              # 블롭 기본 반경 (matrix_scale과 곱해도 됨)
+  "radial_seg": 24,           # 둘레 분할
+  "rings": 16,                # 위/아래 링 수
+  "noise_amp": 0.18,          # 표면 변형 강도 (0..0.4)
+  "noise_freq": 1.0,          # 변형 주파수 (저주파 위주)
+  "anisotropy": Vector3(1.35, 0.85, 1.15),  # 타원체 스케일
+  "bottom_bias": 0.35,        # 아래쪽을 더 두껍게 (0..1)
+  "seed_offset": 7717
+},
+"placement": {
+  "grounding_mode": "clamp_to_matrix",  # "simple_sink" | "clamp_to_matrix"
+  "sink_strength": 0.20,                # 박힘 정도 (0..0.6)
+  "float_guard": 0.05                   # 공중 뜸 방지 여유
+}
+```
+
+UI에는 당장 노출 안 해도 됨(내부 튜닝용).
+
+---
+
+## 3. Matrix(불규칙 블롭) 메시 생성 규격
+
+### 3.1 메시 요구사항
+
+* **닫힌 메시(Closed)**: 위/아래 모두 막혀 있어야 함.
+* 노멀 일관성: **모두 바깥 방향**.
+* 자기 교차 최소화: 변형 강도를 제한하고, 극점(pole) 부근이 찌그러져 뒤집히지 않게 한다.
+* 규칙적 구형/반구형을 피한다:
+  * 기본을 “타원체(Anisotropy)”로 만들고,
+  * 저주파 노이즈로 실루엣을 변형한다.
+* 바닥은 완전 평평하면 인공적이므로:
+  * 아래쪽도 완만히 둥글거나,
+  * `bottom_bias`로 **아래가 더 두꺼운** 덩어리 형태를 만든다.
+
+### 3.2 생성 방식(권장: Parametric sphere 기반 폐곡면)
+
+1. 기본 구/타원체 surface를 parametric으로 생성
+   * `phi: 0..PI`, `theta: 0..TAU`
+2. 각 vertex에 대해:
+   * 기본 반지름 `R`
+   * 타원 스케일 적용: `(x*ax, y*ay, z*az)`
+   * 노이즈 변형: `R' = R * (1 + noise_amp * low_freq_noise(phi, theta, seed))`
+   * bottom_bias 적용: `y<0` 영역에서 R’ 또는 y를 추가로 눌러 “덩어리” 느낌 강화
+3. 인덱스 삼각형으로 surface 구성(Indexed mesh 가능)
+4. 노멀 재계산(또는 vertex 위치 기반 normalize)
+5. 필요 시:
+   * 지나친 변형으로 노멀이 뒤집히는 케이스를 감지/클램프(amp 제한)
+
+※ “반구+바닥 캡”도 폐곡면은 되지만 실루엣이 여전히 반구 느낌이라 권장하지 않음.
+
+---
+
+## 4. 결정 배치/접지(떠있음 방지) 규격
+
+### 4.1 문제 정의
+
+현재 배치는 3D 공간에 포인트를 찍고 `sink`만 조금 적용해서,
+
+* 매트릭스 내부/외부 판정이 없어 “공중 부양”이 생길 수 있음.
+
+### 4.2 grounding_mode
+
+#### A) simple_sink (간단/빠름)
+
+* 기존처럼 pos.y를 sink로 내리되,
+* `float_guard`만큼 추가로 내려서 “떠있음”을 최소화.
+* 장점: 구현 쉬움, 성능 좋음
+* 단점: 매트릭스와 실제 접촉 느낌은 약함
+
+#### B) clamp_to_matrix (권장)
+
+Matrix가 “대략 타원체+노이즈”로 생성되므로,
+
+* 같은 함수(또는 근사)로 **주어진 xz에서 표면 y를 추정**하거나,
+* 더 일반적으로는 `pos` 방향의 레이/투영 기반으로 표면 교점을 구한다.
+
+권장 구현(근사, 성능형):
+
+* matrix가 “원점 중심 블롭”이면,
+  * `dir = normalize(Vector3(x, 0, z))` 또는 `normalize(pos)` 기반으로
+  * 해당 방향에서의 표면 반지름 `r_surface(dir)`를 같은 노이즈 함수로 계산 가능
+  * pos를 `pos = dir * r_surface(dir) + offset` 형태로 표면으로 끌어당김
+  * y는 `-sink_strength * scale` 만큼 추가로 내려 박힘 연출
+
+요구 결과:
+
+* 결정 바닥이 최소한 모암 내부로 약간 들어가 보이고,
+* 공중에 따로 떠 보이는 개체가 거의 없어야 한다.
+
+---
+
+## 5. 머티리얼/렌더링 규격
+
+### 5.1 Matrix material (불투명 권장)
+
+* `opacity = 1.0` 고정(투명 금지)
+* roughness 높게(0.85~0.98)
+* metallic 0
+* 단색 + 약간의 색 랜덤 가능(시드 기반)
+
+### 5.2 Crystal material
+
+* 투명/반투명 유지 가능하나,
+* 다결정 테스트에서 “면이 안 보인다/깜빡인다” 류 문제가 있으면
+  * 테스트 단계에서는 `opacity=1.0`로 강제해 디버깅을 우선한다.
+  * (투명은 depth sorting 이슈가 생길 수 있음)
+
+---
+
+## 6. 검증 체크리스트 (완료 조건)
+
+1. 카메라를 아래로 돌려도 Matrix 내부가 보이지 않는다(바닥 뻥 없음).
+2. Matrix 실루엣이 “구/반구”처럼 규칙적이지 않고, 덩어리 느낌이 난다.
+3. 결정들이 공중에 떠 보이는 케이스가 극히 드물거나 없어야 한다.
+4. seed 고정 시:
+   * Matrix 형태, 결정 배치/회전/스케일이 재현된다(PRNG 결정적).
+
+---
+
+## 7. PRNG/재현성 규칙
+
+* Poly seed 하나로 아래가 모두 결정되어야 함:
+  * N(개수), 분포 타입 샘플링, 스케일, 위치, 방향, preset seed, matrix blob 노이즈
+* `seed_offset` 같은 상수는 **명세로 고정**하고, 코드에서 임의 변경하지 않는다.
+
+---
+
+# 참고: 다결정 파라미터 F/C/K/A 및 파이프라인 (v0.1)
+
+## 용어 및 핵심 파라미터
+
+### 단결정 파라미터 (CrystalGenerator)
 
 * `sides, height, radius_top, radius_bottom, termination, chip, etch, seed, ...`
-* 이 파라미터는 **"결정 1개 메시"**를 만든다.
 
-### 1.2 다결정 파라미터 (새로 도입)
+### 다결정 파라미터 F/C/K/A
 
-다결정은 아래 4개로 충분히 시작한다.
+* **F = Fragmentation (파편화/개수·다양성)**  
+  높을수록: 결정 수 ↑, 크기 분산 ↑, 작은 결정 많아짐
 
-* **F = Fragmentation (파편화/개수·다양성)**
-  * 높을수록: 결정 수 ↑, 크기 분산 ↑, 작은 결정 많아짐
+* **C = Coherence (정렬/공동 방향성)**  
+  높을수록: 결정 축이 비슷한 방향으로 정렬(평행/방사형/부채형)
 
-* **C = Coherence (정렬/공동 방향성)**
-  * 높을수록: 결정 축이 비슷한 방향으로 정렬(평행/방사형/부채형 포함 가능)
+* **K = Compactness (집약/뭉침 정도)**  
+  높을수록: 더 조밀하게 붙음(겹침/침투 허용), 덩어리 느낌
 
-* **K = Compactness (집약/뭉침 정도)**
-  * 높을수록: 더 조밀하게 붙음(겹침/침투 허용), 외곽이 둥글게 뭉친 덩어리 느낌
+* **A = Anisotropy (공간 분포의 이방성)**  
+  낮으면: 등방성(구형 덩어리) / 높으면: 부채꼴/시트형/선형 클러스터 성향
 
-* **A = Anisotropy (공간 분포의 이방성/방사 패턴의 성향)**
-  * 낮으면: 등방성(구형 덩어리)
-  * 높으면: 한쪽으로 길게 뻗거나, 부채꼴/시트형/선형 클러스터 성향
+## 생성 파이프라인 요약
 
-> 주의: "부채꼴(팬)처럼 퍼지는 침상 다발"은 **C가 '평행'만 의미하면 못 나온다**.
-> C는 "정렬 강도", A는 "정렬이 어떤 장(field) 형태로 작동하는지(방사/부채/선형)"까지 커버하도록 설계한다.
+1. 클러스터 스켈레톤: Mass / Fan / Chain 혼합 비율(w_mass, w_fan, w_chain)
+2. N 샘플링: Poisson(μN), N_min..N_max
+3. 스케일 분포: F/K에 따른 분산
+4. 방향(orientation): C/A에 따른 정렬 필드
+5. 배치/충돌: K에 따른 spacing, sink, (v2: grounding_mode)
 
----
+## 테스트 씬 구성 (Poly 테스트)
 
-## 2. 다결정 생성 개요 (한 번만 샘플링)
+* `test_poly_crystal.tscn`
+  * `Node3D` root → `Cluster (Node3D)` → Matrix + Crystals_0..k (MultiMeshInstance3D)
+  * `CameraRig` (orbit_controller)
+  * UI: seed, F, C, K, A, single(sides, height, r_top, r_bot, termination 등)
 
-* 합성 시 **DNA.seed**로 다결정 전체를 1번 샘플링
-* 이후 시간 성장에서는 **Cluster 전체 transform scale만 변경**
-* 즉, 다결정 구성(N, 배치, 방향, 결합 등)은 "고정"
-
----
-
-## 3. 생성 파이프라인 (필수 단계)
-
-### Step 1) "클러스터 스켈레톤" 정의
-
-클러스터의 전체 형태를 결정하는 **붙는 자리(attachment points)**를 만든다.
-
-* 기본 스켈레톤 타입 3개 (연속 확률로 혼합):
-  1. **Mass (덩어리형)**: 중심 근처에 attachment 집중
-  2. **Spray/Fan (부채꼴형)**: 한 축을 기준으로 각도가 벌어지는 방사 attachment
-  3. **Chain/Vein (맥상/선형)**: 곡선/직선 라인 따라 attachment 생성
-
-* 스켈레톤 선택은 혼합 비율:
-  * `w_mass, w_fan, w_chain`을 A와 K로부터 연속적으로 산출
-  * K↑ → mass 비중↑
-  * A↑ → fan/chain 비중↑
-
-### Step 2) 결정 개수 N 샘플링 (연속적 분포)
-
-* 평균 개수 `μN = lerp(N_min, N_max, F)`
-* 실제 N은 **포아송/네거티브 바이노미얼** 같은 카운트 분포에서 샘플:
-  * 추천: `Poisson(μN)`
-  * Godot에서는 직접 구현하거나 정규 근사+클램프 가능
-
-* 권장 값:
-  * `N_min = 3`
-  * `N_max = 40` (테스트용)
-
-### Step 3) 결정별 "크기 분포" 샘플링
-
-* 결정 i의 스케일 `si`는 로그정규/감마 분포가 자연스럽다.
-* F↑ → 분산↑, 작은 결정 다수
-* K↑ → 큰 결정 비중↑(덩어리감)
-
-* 권장:
-  * `si = exp(normal(μ, σ(F)))` 형태
-  * 또는 `pow(rng.randf(), bias)` 근사, `bias = lerp(0.6, 2.4, F)`
-
-### Step 4) "방향(orientation)" 샘플링 (정렬 필드)
-
-* **Coherence C**가 방향 분산 제어:
-  * `θ ~ vonMisesFisher(κ(C))` 개념
-  * `d = normalize(lerp(drand, d0, C))`
-
-* **A(이방성)**가 `d0`가 어떤 장(field)인지 결정:
-  * A 낮음: d0 = 랜덤(등방)
-  * A 중간: d0 = 팬 방향(부채꼴)
-  * A 높음: d0 = 체인 방향(한 축 정렬)
-
-* 팬 형태:
-  * attachment point가 중심에서 멀어질수록 방향 조금씩 달라지게
-  * `d0(p) = normalize(fan_axis + fan_spread * tangent(p))`
-
-### Step 5) 배치/충돌/결합(Compactness K)
-
-* K 낮음: 충돌 회피 강하게 → 서로 떨어져 보임
-* K 높음: 겹침 허용(침투), 일부는 매트릭스에 "박힌 느낌"(sink)
-
-* 구현 정책(테스트 버전):
-  * 최소거리: `min_dist = lerp(1.2, 0.4, K) * (si+sj)`
-  * 실패 시 몇 번 재시도 후 그냥 배치
-
-* 결합 강도 연출: 결합부 주변 보조 결정(secondary) 또는 매트릭스 mesh 추가
-
----
-
-## 4. 매트릭스(Matrix) / 모암 처리
-
-* 단결정만 여러 개 두면 "공중에 떠있는" 느낌 → **모암(매트릭스)** 최소 1개 생성
-
-### 4.1 매트릭스 생성(테스트 버전)
-
-* 단순: 거친 반구/덩어리 메쉬 1개 (노이즈 변형)
-* K↑일수록 매트릭스 비중↑
-
-### 4.2 결정의 sink(박힘)
-
-* K와 결합 강도에 따라 결정 하단을 매트릭스 내부로 -Y 오프셋
-
----
-
-## 5. 렌더링/머티리얼(테스트 스펙)
-
-* 단결정: `StandardMaterial3D` 유지
-* 다결정 클러스터:
-  * **MultiMeshInstance3D 권장** (성능)
-  * 단결정 메시 1~몇 개 공유, transform만 다르게 배치
-  * chip/etch가 결정마다 다르면: 3~6종 메시 프리셋 + 그룹별 MultiMesh
-
----
-
-## 6. DNA(저장 구조)
+## DNA/저장 구조 (참고)
 
 ```json
 {
   "seed": 123,
-  "crystal_system": "hexagonal",
-  "environment": {"temperature": 3, "pressure": "low", "pm": 33},
-  "poly": {
-    "F": 0.55,
-    "C": 0.65,
-    "K": 0.45,
-    "A": 0.35,
-    "count_hint": 18,
-    "skeleton_mix": {"mass": 0.4, "fan": 0.4, "chain": 0.2}
-  },
-  "single": {
-    "sides": 6,
-    "height": 2.2,
-    "radius_top": 0.45,
-    "radius_bottom": 0.7,
-    "termination": 0.8,
-    "chip": 0.2,
-    "etch": 0.1
-  }
+  "poly": { "F": 0.55, "C": 0.65, "K": 0.45, "A": 0.35, "count_hint": 18 },
+  "single": { "sides": 6, "height": 2.2, "radius_top": 0.45, "radius_bottom": 0.7, "termination": 0.8, "chip": 0.2, "etch": 0.1 }
 }
 ```
 
 ---
 
-## 7. 테스트 씬 요구사항 (Poly 테스트)
+**다음 단계(코드 수정)** 에서는:
 
-### 7.1 씬 구성
-
-* `PolyCrystalTest.tscn`
-  * `Node3D` root
-  * `Cluster (Node3D)`
-    * `Matrix (MeshInstance3D)` (optional)
-    * `Crystals` (MultiMeshInstance3D 또는 Node3D 아래 MeshInstance 여러 개)
-  * `CameraRig` (기존 orbit_controller 재사용)
-  * UI 슬라이더: seed, F, C, K, A, single 파라미터(sides, height, r_top, r_bot, termination)
-
-### 7.2 디버그 표시(필수)
-
-* 현재 N(결정 개수)
-* skeleton mix 비율
-* 평균/분산(스케일 분포)
-* "재생성 시 카메라 자동 맞춤"(AABB fit) 옵션 토글
-
----
-
-## 8. PM/온도/압력과의 연결(테스트 단계)
-
-* PM을 **F/C/K/A의 prior(사전분포)**로만 사용
-* 예시(초안):
-  * 저온 수성/풍화(PM47): F↑, A↑, K↓
-  * 페그마타이트(PM34): F↓, C↑, K 중간
-  * 변성/고압: K↑, C↑
-
----
-
-## 9. 구현 순서 (권장)
-
-1. N 샘플링 + 스케일 분포 → 여러 개 뜨는지 확인
-2. skeleton(attachment points) 추가
-3. orientation field(C/A) 추가
-4. compactness(K)로 충돌/침투/sink 조절
-5. matrix 추가
-6. MultiMesh 최적화(필요 시)
-
----
-
-## 10. 성공 판정(테스트 체크리스트)
-
-* F↑: 조각 많아짐/작아짐
-* C↑: 방향 정렬↑ (A에 따라 평행/방사/부채)
-* K↑: 더 뭉치고 결합부 자연스러움
-* A↑: 한쪽/부채/선형으로 치우침
-* seed 고정 시 완전 재현
-* UI 이벤트 → orbit 전파 없음
-* orthographic 전환 가능
+* `_build_matrix_mesh()`를 위 명세대로 “폐곡면 블롭” 생성기로 교체
+* `clamp_to_matrix` 기반 접지 로직 추가
+* (옵션) 단결정 캡이 너무 평평한 문제 해결(거친 바닥 캡 등)까지 묶어서 적용 가능

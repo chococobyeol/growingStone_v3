@@ -58,6 +58,10 @@ func set_distance(d: float) -> void:
 	_distance = clampf(d, min_distance, max_distance)
 	_update_position()
 
+func reset_distance(d: float = 6.0) -> void:
+	_distance = clampf(d, min_distance, max_distance)
+	_update_position()
+
 func _is_pointer_over_ui() -> bool:
 	# Godot 4: 현재 마우스 아래의 Control을 얻는다.
 	var hovered := get_viewport().gui_get_hovered_control()
